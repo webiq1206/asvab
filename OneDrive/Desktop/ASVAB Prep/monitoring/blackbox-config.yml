@@ -1,0 +1,194 @@
+# ASVAB Prep Blackbox Exporter Configuration
+# Military-grade endpoint monitoring
+
+modules:
+  # HTTP GET request monitoring
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200]
+      method: GET
+      headers:
+        User-Agent: "ASVAB-Prep-Monitor/1.0"
+      follow_redirects: true
+      preferred_ip_protocol: "ip4"
+      ip_protocol_fallback: false
+
+  # HTTPS monitoring with certificate validation
+  http_2xx_secure:
+    prober: http
+    timeout: 5s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200]
+      method: GET
+      headers:
+        User-Agent: "ASVAB-Prep-Monitor/1.0"
+      follow_redirects: true
+      preferred_ip_protocol: "ip4"
+      tls_config:
+        insecure_skip_verify: false
+        ca_file: "/etc/ssl/certs/ca-certificates.crt"
+
+  # API endpoint monitoring with authentication
+  http_api_check:
+    prober: http
+    timeout: 10s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 401] # 401 expected for auth-required endpoints
+      method: GET
+      headers:
+        User-Agent: "ASVAB-Prep-API-Monitor/1.0"
+        Content-Type: "application/json"
+      follow_redirects: true
+      preferred_ip_protocol: "ip4"
+
+  # POST request monitoring (for form submissions)
+  http_post_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 201, 400] # 400 expected for validation errors
+      method: POST
+      headers:
+        User-Agent: "ASVAB-Prep-Monitor/1.0"
+        Content-Type: "application/json"
+      body: '{"test": "probe"}'
+
+  # TCP connectivity check
+  tcp_connect:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      preferred_ip_protocol: "ip4"
+
+  # DNS resolution check
+  dns_resolution:
+    prober: dns
+    timeout: 5s
+    dns:
+      query_name: "asvabprep.com"
+      query_type: "A"
+      valid_rcodes:
+        - NOERROR
+      validate_answer_rrs:
+        fail_if_matches_regexp:
+          - ".*127.0.0.1"
+        fail_if_not_matches_regexp:
+          - ".*"
+
+  # ICMP ping check
+  icmp_ping:
+    prober: icmp
+    timeout: 5s
+    icmp:
+      preferred_ip_protocol: "ip4"
+      source_ip_address: "0.0.0.0"
+
+  # Military-specific health check
+  military_health_check:
+    prober: http
+    timeout: 15s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200]
+      method: GET
+      headers:
+        User-Agent: "ASVAB-Military-Health-Monitor/1.0"
+        X-Military-Check: "true"
+      follow_redirects: true
+      preferred_ip_protocol: "ip4"
+      fail_if_not_matches_regexp:
+        - '"status":\s*"ok"'
+      fail_if_matches_regexp:
+        - '"status":\s*"error"'
+
+  # WebSocket connection check
+  websocket_check:
+    prober: http
+    timeout: 10s
+    http:
+      valid_http_versions: ["HTTP/1.1"]
+      valid_status_codes: [101, 400] # 101 for successful upgrade, 400 for expected failure without proper headers
+      method: GET
+      headers:
+        User-Agent: "ASVAB-WebSocket-Monitor/1.0"
+        Connection: "Upgrade"
+        Upgrade: "websocket"
+        Sec-WebSocket-Version: "13"
+        Sec-WebSocket-Key: "dGhlIHNhbXBsZSBub25jZQ=="
+      follow_redirects: false
+
+  # SSL certificate expiry check
+  ssl_expiry:
+    prober: http
+    timeout: 5s
+    http:
+      method: GET
+      valid_status_codes: [200, 400, 401, 403, 404, 500, 501, 502, 503]
+      headers:
+        User-Agent: "ASVAB-SSL-Monitor/1.0"
+      tls_config:
+        insecure_skip_verify: false
+      preferred_ip_protocol: "ip4"
+
+  # Database connection check (via API)
+  database_check:
+    prober: http
+    timeout: 10s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200]
+      method: GET
+      headers:
+        User-Agent: "ASVAB-DB-Monitor/1.0"
+      follow_redirects: true
+      fail_if_not_matches_regexp:
+        - '"database":\s*"healthy"'
+
+  # Cache (Redis) check via API
+  cache_check:
+    prober: http
+    timeout: 10s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200]
+      method: GET
+      headers:
+        User-Agent: "ASVAB-Cache-Monitor/1.0"
+      follow_redirects: true
+      fail_if_not_matches_regexp:
+        - '"cache":\s*"healthy"'
+
+  # Mobile API specific check
+  mobile_api_check:
+    prober: http
+    timeout: 15s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 401]
+      method: GET
+      headers:
+        User-Agent: "ASVAB-Mobile-App/1.0 (iOS)"
+        X-Platform: "mobile"
+        Accept: "application/json"
+      follow_redirects: true
+      preferred_ip_protocol: "ip4"
+
+  # CDN performance check
+  cdn_performance_check:
+    prober: http
+    timeout: 3s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200]
+      method: GET
+      headers:
+        User-Agent: "ASVAB-CDN-Monitor/1.0"
+        Cache-Control: "no-cache"
+      follow_redirects: true
+      preferred_ip_protocol: "ip4"

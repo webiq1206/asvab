@@ -1,0 +1,432 @@
+/*
+ * ASVAB Prep Military-Themed Grafana Dashboard CSS
+ * Transforms Grafana into a military command center aesthetic
+ */
+
+/* Military Color Palette */
+:root {
+    --military-gold: #ffd700;
+    --military-green: #4caf50;
+    --military-blue: #1e88e5;
+    --military-red: #f44336;
+    --military-dark: #0d1421;
+    --military-accent: #2a2a3e;
+    --military-text: #e0e0e0;
+    --military-success: #44aa44;
+    --military-warning: #ff9800;
+    --military-critical: #ff5252;
+}
+
+/* Main Dashboard Background */
+.grafana-app {
+    background: linear-gradient(135deg, var(--military-dark), #16213e, #0f3460) !important;
+    color: var(--military-text) !important;
+}
+
+/* Top Navigation Bar */
+.navbar {
+    background: rgba(0, 0, 0, 0.9) !important;
+    border-bottom: 3px solid var(--military-gold) !important;
+}
+
+.navbar-brand-text {
+    color: var(--military-gold) !important;
+    font-weight: bold !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8) !important;
+}
+
+.navbar-brand-text::before {
+    content: "🎖️ ";
+    font-size: 1.2em;
+}
+
+/* Dashboard Title */
+.dashboard-title {
+    color: var(--military-gold) !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Panel Styling */
+.panel {
+    background: rgba(0, 0, 0, 0.7) !important;
+    border: 2px solid var(--military-gold) !important;
+    border-radius: 8px !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.panel:hover {
+    box-shadow: 0 8px 16px rgba(255, 215, 0, 0.3) !important;
+    transform: translateY(-2px) !important;
+    transition: all 0.3s ease !important;
+}
+
+/* Panel Headers */
+.panel-title {
+    color: var(--military-gold) !important;
+    font-weight: bold !important;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
+}
+
+.panel-title-text {
+    background: none !important;
+    padding: 0.5rem !important;
+}
+
+/* Metric Values - Large Numbers */
+.singlestat-panel .singlestat-panel-value {
+    color: var(--military-success) !important;
+    font-weight: bold !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Graph Lines and Areas */
+.flot-chart .flot-x-axis .flot-tick-label,
+.flot-chart .flot-y-axis .flot-tick-label {
+    color: var(--military-text) !important;
+}
+
+/* Military Branch Colors for Graphs */
+.graph-legend-series:nth-child(1) .graph-legend-icon {
+    background-color: #4caf50 !important; /* Army Green */
+}
+
+.graph-legend-series:nth-child(2) .graph-legend-icon {
+    background-color: #2196f3 !important; /* Navy Blue */
+}
+
+.graph-legend-series:nth-child(3) .graph-legend-icon {
+    background-color: #f44336 !important; /* Marine Red */
+}
+
+.graph-legend-series:nth-child(4) .graph-legend-icon {
+    background-color: #03a9f4 !important; /* Air Force Blue */
+}
+
+.graph-legend-series:nth-child(5) .graph-legend-icon {
+    background-color: #ff9800 !important; /* Coast Guard Orange */
+}
+
+.graph-legend-series:nth-child(6) .graph-legend-icon {
+    background-color: #9c27b0 !important; /* Space Force Purple */
+}
+
+/* Alert Panels */
+.alert-rule-item {
+    background: rgba(139, 0, 0, 0.2) !important;
+    border: 2px solid var(--military-critical) !important;
+    border-radius: 8px !important;
+}
+
+.alert-rule-item.alert-rule-item--critical {
+    border-color: #ff0000 !important;
+    background: rgba(255, 0, 0, 0.15) !important;
+}
+
+.alert-rule-item.alert-rule-item--warning {
+    border-color: var(--military-warning) !important;
+    background: rgba(255, 152, 0, 0.15) !important;
+}
+
+/* Stat Panels */
+.stat-panel {
+    background: rgba(0, 0, 0, 0.7) !important;
+    border: 2px solid var(--military-gold) !important;
+    border-radius: 8px !important;
+}
+
+.stat-panel-value {
+    color: var(--military-success) !important;
+    font-weight: bold !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8) !important;
+}
+
+.stat-panel-value-and-name {
+    text-align: center !important;
+}
+
+/* Table Panels */
+.table-panel-table {
+    background: rgba(0, 0, 0, 0.5) !important;
+    border-collapse: collapse !important;
+}
+
+.table-panel-table thead {
+    background: rgba(255, 215, 0, 0.2) !important;
+    color: var(--military-gold) !important;
+}
+
+.table-panel-table tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.table-panel-table tbody tr:hover {
+    background: rgba(255, 215, 0, 0.1) !important;
+}
+
+/* Gauge Panels */
+.gauge-panel .gauge {
+    color: var(--military-text) !important;
+}
+
+.gauge-panel .gauge-value {
+    color: var(--military-success) !important;
+    font-weight: bold !important;
+}
+
+/* Bar Gauge Panels */
+.bar-gauge-panel .bar-gauge {
+    background: rgba(0, 0, 0, 0.3) !important;
+}
+
+.bar-gauge-panel .bar-gauge-value {
+    background: linear-gradient(90deg, var(--military-success), var(--military-green)) !important;
+}
+
+/* Military Branch Specific Styling */
+.panel[data-panel-id*="army"] {
+    border-color: #4caf50 !important;
+}
+
+.panel[data-panel-id*="navy"] {
+    border-color: #2196f3 !important;
+}
+
+.panel[data-panel-id*="marines"] {
+    border-color: #f44336 !important;
+}
+
+.panel[data-panel-id*="airforce"] {
+    border-color: #03a9f4 !important;
+}
+
+.panel[data-panel-id*="coastguard"] {
+    border-color: #ff9800 !important;
+}
+
+.panel[data-panel-id*="spaceforce"] {
+    border-color: #9c27b0 !important;
+}
+
+/* Dashboard Variables */
+.template-variable {
+    background: rgba(0, 0, 0, 0.7) !important;
+    border: 1px solid var(--military-gold) !important;
+    color: var(--military-text) !important;
+}
+
+.template-variable-value {
+    color: var(--military-gold) !important;
+}
+
+/* Time Picker */
+.time-picker-buttons {
+    background: rgba(0, 0, 0, 0.8) !important;
+    border: 1px solid var(--military-gold) !important;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--military-gold);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 215, 0, 0.8);
+}
+
+/* Custom Military Status Indicators */
+.military-status-operational::before {
+    content: "🟢 OPERATIONAL";
+    color: var(--military-success);
+    font-weight: bold;
+}
+
+.military-status-warning::before {
+    content: "🟡 CAUTION";
+    color: var(--military-warning);
+    font-weight: bold;
+}
+
+.military-status-critical::before {
+    content: "🔴 CRITICAL";
+    color: var(--military-critical);
+    font-weight: bold;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .panel {
+        margin-bottom: 1rem !important;
+    }
+    
+    .panel-title {
+        font-size: 0.9rem !important;
+    }
+    
+    .singlestat-panel-value {
+        font-size: 1.5rem !important;
+    }
+}
+
+/* Animation Effects */
+@keyframes military-pulse {
+    0% { opacity: 0.8; }
+    50% { opacity: 1; }
+    100% { opacity: 0.8; }
+}
+
+.panel[data-panel-id*="critical"] {
+    animation: military-pulse 2s infinite !important;
+}
+
+/* Dashboard Grid */
+.react-grid-layout {
+    background: transparent !important;
+}
+
+.react-grid-item {
+    transition: all 0.3s ease !important;
+}
+
+.react-grid-item:hover {
+    z-index: 2 !important;
+}
+
+/* Panel Menu */
+.panel-menu {
+    background: rgba(0, 0, 0, 0.9) !important;
+    border: 1px solid var(--military-gold) !important;
+    border-radius: 4px !important;
+}
+
+.panel-menu-item {
+    color: var(--military-text) !important;
+}
+
+.panel-menu-item:hover {
+    background: rgba(255, 215, 0, 0.2) !important;
+    color: var(--military-gold) !important;
+}
+
+/* Tooltip Styling */
+.tooltip {
+    background: rgba(0, 0, 0, 0.9) !important;
+    border: 1px solid var(--military-gold) !important;
+    color: var(--military-text) !important;
+    border-radius: 4px !important;
+}
+
+/* Form Controls */
+input[type="text"], input[type="number"], select, textarea {
+    background: rgba(0, 0, 0, 0.7) !important;
+    border: 1px solid var(--military-gold) !important;
+    color: var(--military-text) !important;
+    border-radius: 4px !important;
+}
+
+input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+    border-color: var(--military-success) !important;
+    box-shadow: 0 0 5px rgba(255, 215, 0, 0.5) !important;
+}
+
+/* Buttons */
+.btn {
+    background: var(--military-gold) !important;
+    color: #000 !important;
+    border: none !important;
+    font-weight: bold !important;
+    border-radius: 4px !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn:hover {
+    background: rgba(255, 215, 0, 0.8) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.btn-primary {
+    background: var(--military-blue) !important;
+    color: white !important;
+}
+
+.btn-success {
+    background: var(--military-success) !important;
+    color: white !important;
+}
+
+.btn-warning {
+    background: var(--military-warning) !important;
+    color: white !important;
+}
+
+.btn-danger {
+    background: var(--military-critical) !important;
+    color: white !important;
+}
+
+/* Loading Indicators */
+.loading {
+    color: var(--military-gold) !important;
+}
+
+.loading::after {
+    content: " 🎖️";
+    animation: military-pulse 1s infinite;
+}
+
+/* Footer */
+.footer {
+    background: rgba(0, 0, 0, 0.8) !important;
+    border-top: 1px solid var(--military-gold) !important;
+    color: var(--military-text) !important;
+}
+
+/* Custom CSS Classes for Military Metrics */
+.military-metric-army { color: #4caf50 !important; }
+.military-metric-navy { color: #2196f3 !important; }
+.military-metric-marines { color: #f44336 !important; }
+.military-metric-airforce { color: #03a9f4 !important; }
+.military-metric-coastguard { color: #ff9800 !important; }
+.military-metric-spaceforce { color: #9c27b0 !important; }
+
+/* Override Grafana's default dark theme */
+.theme-dark .panel-container {
+    background: transparent !important;
+}
+
+.theme-dark .dashboard-container {
+    background: transparent !important;
+}
+
+/* Add military rank styling to user info */
+.user-info::before {
+    content: "⭐ COMMANDER ";
+    color: var(--military-gold);
+    font-weight: bold;
+}
+
+/* Final military branding */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="military-grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,215,0,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23military-grid)" /></svg>') !important;
+    pointer-events: none;
+    z-index: -1;
+}

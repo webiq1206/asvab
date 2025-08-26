@@ -1,0 +1,766 @@
+// ASVAB Prep Database Schema
+// Complete schema with 40+ tables for military-focused test prep ecosystem
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Management
+model User {
+  id                String         @id @default(cuid())
+  email             String         @unique
+  passwordHash      String?
+  firstName         String?
+  lastName          String?
+  selectedBranch    MilitaryBranch
+  subscriptionTier  SubscriptionTier @default(FREE)
+  trialEndsAt       DateTime?
+  lastLoginAt       DateTime?
+  isActive          Boolean        @default(true)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  // Relations
+  profile           UserProfile?
+  progress          UserProgress[]
+  quizzes           Quiz[]
+  questionAttempts  QuestionAttempt[]
+  subscriptions     Subscription[]
+  studyGroups       StudyGroupMember[]
+  ownedGroups       StudyGroup[]
+  friendRequestsSent FriendRequest[] @relation("SentRequests")
+  friendRequestsReceived FriendRequest[] @relation("ReceivedRequests")
+  notifications     Notification[]
+  fitnessEntries    FitnessEntry[]
+  fitnessGoals      FitnessGoal[]
+  achievements      UserAchievement[]
+  flashcardDecks    FlashcardDeck[]
+  flashcards        Flashcard[]
+  flashcardReviews  FlashcardReview[]
+  messages          Message[]
+  groupMessages     GroupMessage[]
+  referralsSent     Referral[] @relation("ReferrerUser")
+  referralsReceived Referral[] @relation("ReferredUser")
+  deviceTokens      DeviceToken[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  avatarUrl      String?
+  bio            String?
+  currentRank    String?
+  targetJobs     String[]  // Array of job IDs
+  studyStreak    Int       @default(0)
+  lastStudyDate  DateTime?
+  timezone       String    @default("UTC")
+  preferences    Json      @default("{}")
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("user_profiles")
+}
+
+// Military Branch Enum
+enum MilitaryBranch {
+  ARMY
+  NAVY
+  AIR_FORCE
+  MARINES
+  COAST_GUARD
+  SPACE_FORCE
+}
+
+enum SubscriptionTier {
+  FREE
+  PREMIUM
+}
+
+// Question Management - ASVAB questions are standardized across all branches
+model Question {
+  id                String           @id @default(cuid())
+  content           String
+  options           String[]         // JSON array of answer options
+  correctAnswer     Int              // Index of correct option
+  category          QuestionCategory
+  difficulty        QuestionDifficulty @default(MEDIUM)
+  explanationBasic  String
+  explanationPremium String?
+  tags              String[]         @default([])
+  imageUrl          String?          // For questions with diagrams
+  isActive          Boolean          @default(true)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  // Relations
+  attempts          QuestionAttempt[]
+  quizQuestions     QuizQuestion[]
+  flashcards        Flashcard[]
+
+  @@index([category, difficulty])
+  @@map("questions")
+}
+
+enum QuestionCategory {
+  GENERAL_SCIENCE
+  ARITHMETIC_REASONING
+  WORD_KNOWLEDGE
+  PARAGRAPH_COMPREHENSION
+  MATHEMATICS_KNOWLEDGE
+  ELECTRONICS_INFORMATION
+  AUTO_SHOP
+  MECHANICAL_COMPREHENSION
+  ASSEMBLING_OBJECTS
+}
+
+enum QuestionDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+model QuestionAttempt {
+  id            String    @id @default(cuid())
+  userId        String
+  questionId    String
+  userAnswer    Int
+  isCorrect     Boolean
+  timeSpent     Int       // Time in seconds
+  attemptedAt   DateTime  @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, questionId])
+  @@map("question_attempts")
+}
+
+// Quiz System
+model Quiz {
+  id              String      @id @default(cuid())
+  userId          String
+  title           String
+  category        QuestionCategory?
+  isASVABReplica  Boolean     @default(false)
+  targetScore     Int?
+  startedAt       DateTime    @default(now())
+  completedAt     DateTime?
+  score           Int?
+  totalQuestions  Int
+  correctAnswers  Int         @default(0)
+  timeSpent       Int?        // Time in seconds
+  
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questions QuizQuestion[]
+  sections  QuizSection[]  // For ASVAB replica structure
+
+  @@index([userId, completedAt])
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id           String  @id @default(cuid())
+  quizId       String
+  questionId   String
+  userAnswer   Int?
+  isCorrect    Boolean?
+  timeSpent    Int?    // Time in seconds
+  orderIndex   Int     // Question order in quiz
+
+  quiz     Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([quizId, orderIndex])
+  @@map("quiz_questions")
+}
+
+model QuizSection {
+  id            String           @id @default(cuid())
+  quizId        String
+  category      QuestionCategory
+  timeLimit     Int              // Time limit in seconds
+  timeSpent     Int?             // Actual time spent
+  startedAt     DateTime?
+  completedAt   DateTime?
+  orderIndex    Int              // Section order in ASVAB
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([quizId, orderIndex])
+  @@map("quiz_sections")
+}
+
+// Progress Tracking
+model UserProgress {
+  id              String           @id @default(cuid())
+  userId          String
+  category        QuestionCategory
+  totalQuestions  Int              @default(0)
+  correctAnswers  Int              @default(0)
+  averageScore    Float            @default(0)
+  bestScore       Int              @default(0)
+  lastStudied     DateTime?
+  updatedAt       DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category])
+  @@map("user_progress")
+}
+
+// Subscription System
+model Subscription {
+  id                  String           @id @default(cuid())
+  userId              String
+  tier                SubscriptionTier
+  status              SubscriptionStatus
+  stripeSubscriptionId String?         @unique
+  appleTransactionId  String?          @unique
+  googlePurchaseToken String?          @unique
+  currentPeriodStart  DateTime?
+  currentPeriodEnd    DateTime?
+  cancelAtPeriodEnd   Boolean          @default(false)
+  trialStart          DateTime?
+  trialEnd            DateTime?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@map("subscriptions")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+}
+
+// Military Job Database - THIS REMAINS BRANCH-FILTERED
+model MilitaryJob {
+  id                String         @id @default(cuid())
+  branch            MilitaryBranch // Jobs ARE branch-specific
+  title             String
+  mosCode           String         // Military Occupational Specialty Code
+  description       String
+  minAFQTScore      Int
+  requiredLineScores Json          // JSON object with score requirements
+  clearanceRequired String?
+  trainingLength    String?
+  physicalRequirements String[]
+  isActive          Boolean        @default(true)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([branch, minAFQTScore])
+  @@map("military_jobs")
+}
+
+// Physical Fitness Standards - THIS REMAINS BRANCH-FILTERED
+model PhysicalStandard {
+  id          String         @id @default(cuid())
+  branch      MilitaryBranch // Standards ARE branch-specific
+  gender      Gender
+  ageMin      Int
+  ageMax      Int
+  runTimeMax  Int           // Maximum run time in seconds
+  pushupsMin  Int           // Minimum pushups
+  situpsMin   Int           // Minimum sit-ups
+  planksMin   Int?          // Minimum plank time in seconds
+  bodyFatMax  Float?        // Maximum body fat percentage
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([branch, gender, ageMin, ageMax])
+  @@map("physical_standards")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+model FitnessEntry {
+  id          String       @id @default(cuid())
+  userId      String
+  type        FitnessType
+  value       Float        // Time in seconds or count
+  recordedAt  DateTime     @default(now())
+  notes       String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, recordedAt])
+  @@map("fitness_entries")
+}
+
+enum FitnessType {
+  RUN
+  PUSHUPS
+  SITUPS
+  PLANK
+}
+
+model FitnessGoal {
+  id           String       @id @default(cuid())
+  userId       String
+  type         FitnessType
+  targetValue  Float
+  currentValue Float        @default(0)
+  targetDate   DateTime
+  isCompleted  Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, isCompleted])
+  @@map("fitness_goals")
+}
+
+// Social Features
+model StudyGroup {
+  id          String              @id @default(cuid())
+  name        String
+  description String?
+  branch      MilitaryBranch      // Groups are branch-specific
+  isPublic    Boolean             @default(true)
+  ownerId     String
+  maxMembers  Int                 @default(20)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  owner    User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members  StudyGroupMember[]
+  messages GroupMessage[]
+  challenges GroupChallenge[]
+
+  @@index([branch, isPublic])
+  @@map("study_groups")
+}
+
+model StudyGroupMember {
+  id        String   @id @default(cuid())
+  groupId   String
+  userId    String
+  role      GroupRole @default(MEMBER)
+  joinedAt  DateTime @default(now())
+
+  group StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@map("study_group_members")
+}
+
+enum GroupRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model FriendRequest {
+  id          String              @id @default(cuid())
+  senderId    String
+  receiverId  String
+  status      FriendRequestStatus @default(PENDING)
+  sentAt      DateTime            @default(now())
+  respondedAt DateTime?
+
+  sender   User @relation("SentRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, receiverId])
+  @@map("friend_requests")
+}
+
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+// Messaging System
+model Message {
+  id         String    @id @default(cuid())
+  senderId   String
+  receiverId String
+  content    String
+  sentAt     DateTime  @default(now())
+  readAt     DateTime?
+
+  sender   User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, receiverId, sentAt])
+  @@map("messages")
+}
+
+model GroupMessage {
+  id        String    @id @default(cuid())
+  groupId   String
+  senderId  String
+  content   String
+  sentAt    DateTime  @default(now())
+
+  group  StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender User       @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, sentAt])
+  @@map("group_messages")
+}
+
+// Notifications
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      NotificationType
+  data      Json?            @default("{}")
+  isRead    Boolean          @default(false)
+  sentAt    DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, sentAt])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  STUDY_REMINDER
+  ACHIEVEMENT
+  DAILY_MISSION
+  TRIAL_WARNING
+  SOCIAL
+  QUIZ_COMPLETE
+  FRIEND_REQUEST
+  GROUP_INVITE
+}
+
+model DeviceToken {
+  id       String   @id @default(cuid())
+  userId   String
+  token    String   @unique
+  platform String   // ios, android
+  isActive Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+  @@map("device_tokens")
+}
+
+// Gamification
+model Achievement {
+  id          String            @id @default(cuid())
+  name        String            @unique
+  description String
+  type        AchievementType
+  category    AchievementCategory
+  branch      MilitaryBranch?   // Some achievements are branch-specific
+  iconUrl     String?
+  requirement Json              // JSON object defining requirement
+  isActive    Boolean           @default(true)
+
+  userAchievements UserAchievement[]
+
+  @@index([type, category, branch])
+  @@map("achievements")
+}
+
+enum AchievementType {
+  STUDY_STREAK
+  QUIZ_SCORE
+  CATEGORY_MASTERY
+  SOCIAL_ENGAGEMENT
+  PHYSICAL_FITNESS
+  CONSISTENCY
+}
+
+enum AchievementCategory {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+model UserAchievement {
+  id            String    @id @default(cuid())
+  userId        String
+  achievementId String
+  earnedAt      DateTime  @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
+
+// Flashcard System
+model FlashcardDeck {
+  id              String           @id @default(cuid())
+  createdBy       String
+  name            String
+  description     String
+  category        QuestionCategory
+  branchRelevance MilitaryBranch[] // For military-specific content
+  isPublic        Boolean          @default(false)
+  isActive        Boolean          @default(true)
+  tags            String[]         @default([])
+  colorTheme      String?
+  iconName        String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  creator    User        @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  flashcards Flashcard[]
+
+  @@index([createdBy, category, isPublic])
+  @@map("flashcard_decks")
+}
+
+model Flashcard {
+  id              String                @id @default(cuid())
+  createdBy       String
+  deckId          String?
+  question        String
+  answer          String
+  category        QuestionCategory
+  difficulty      FlashcardDifficulty
+  type            FlashcardType
+  explanation     String?
+  hint            String?
+  tags            String[]              @default([])
+  choices         String[]              @default([])
+  branchRelevance MilitaryBranch[]      // For military-specific content
+  isPublic        Boolean               @default(false)
+  isActive        Boolean               @default(true)
+  cardStatus      FlashcardStatus       @default(NEW)
+  lastReviewed    DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  creator User                @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  deck    FlashcardDeck?      @relation(fields: [deckId], references: [id], onDelete: SetNull)
+  reviews FlashcardReview[]
+
+  @@index([createdBy, category, difficulty])
+  @@index([deckId, cardStatus])
+  @@map("flashcards")
+}
+
+model FlashcardReview {
+  id             String    @id @default(cuid())
+  userId         String
+  flashcardId    String
+  rating         Int       // 0-5 scale for spaced repetition
+  timeSpent      Int       // in seconds
+  wasCorrect     Boolean?
+  userAnswer     String?
+  notes          String?
+  interval       Int       // Days until next review
+  repetitions    Int       // Number of successful reviews
+  easeFactor     Float     // Spaced repetition ease factor
+  nextReviewDate DateTime
+  reviewDate     DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  flashcard Flashcard @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+
+  @@index([userId, nextReviewDate])
+  @@index([flashcardId, reviewDate])
+  @@map("flashcard_reviews")
+}
+
+enum FlashcardDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum FlashcardType {
+  BASIC
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  FILL_IN_BLANK
+}
+
+enum FlashcardStatus {
+  NEW
+  LEARNING
+  REVIEW
+  MASTERED
+}
+
+// Competition System
+model GroupChallenge {
+  id          String            @id @default(cuid())
+  groupId     String
+  name        String
+  description String?
+  type        ChallengeType
+  startDate   DateTime
+  endDate     DateTime
+  status      ChallengeStatus   @default(ACTIVE)
+  rules       Json              @default("{}")
+  prizes      Json              @default("{}")
+  createdAt   DateTime          @default(now())
+
+  group         StudyGroup           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  participation ChallengeParticipant[]
+
+  @@index([groupId, status, startDate])
+  @@map("group_challenges")
+}
+
+enum ChallengeType {
+  QUIZ_BATTLE
+  STUDY_STREAK
+  SCORE_CHALLENGE
+  CATEGORY_FOCUS
+}
+
+enum ChallengeStatus {
+  ACTIVE
+  COMPLETED
+  CANCELED
+}
+
+model ChallengeParticipant {
+  id          String    @id @default(cuid())
+  challengeId String
+  userId      String
+  score       Int       @default(0)
+  rank        Int?
+  completedAt DateTime?
+  joinedAt    DateTime  @default(now())
+
+  challenge GroupChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, userId])
+  @@map("challenge_participants")
+}
+
+// Referral System
+model Referral {
+  id            String        @id @default(cuid())
+  referrerId    String
+  referredId    String?       // null until signup
+  referralCode  String        @unique
+  status        ReferralStatus @default(PENDING)
+  rewardGranted Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  completedAt   DateTime?
+
+  referrer User  @relation("ReferrerUser", fields: [referrerId], references: [id], onDelete: Cascade)
+  referred User? @relation("ReferredUser", fields: [referredId], references: [id], onDelete: SetNull)
+
+  @@index([referralCode])
+  @@map("referrals")
+}
+
+enum ReferralStatus {
+  PENDING
+  COMPLETED
+  EXPIRED
+}
+
+// Analytics & Tracking
+model UserSession {
+  id        String   @id @default(cuid())
+  userId    String
+  startTime DateTime @default(now())
+  endTime   DateTime?
+  duration  Int?     // Duration in seconds
+  platform  String   // ios, android, web
+  version   String?  // App version
+
+  @@index([userId, startTime])
+  @@map("user_sessions")
+}
+
+model EventLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  eventType  String
+  eventData  Json     @default("{}")
+  timestamp  DateTime @default(now())
+  sessionId  String?
+
+  @@index([eventType, timestamp])
+  @@index([userId, timestamp])
+  @@map("event_logs")
+}
+
+// Content Management
+model ContentVersion {
+  id          String      @id @default(cuid())
+  type        ContentType
+  version     String
+  description String?
+  isActive    Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+
+  @@index([type, isActive])
+  @@map("content_versions")
+}
+
+enum ContentType {
+  QUESTIONS
+  JOBS
+  STANDARDS
+  ACHIEVEMENTS
+}
+
+// System Configuration
+model AppConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       Json
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("app_config")
+}
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  isEnabled   Boolean  @default(false)
+  description String?
+  conditions  Json?    @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("feature_flags")
+}
+
+// Question Sessions for resume capability
+model QuestionSession {
+  id                    String           @id @default(cuid())
+  userId                String
+  questionIds           String[]         @default([])
+  currentQuestionIndex  Int              @default(0)
+  startedAt            DateTime         @default(now())
+  completedAt          DateTime?
+  category             QuestionCategory?
+  difficulty           QuestionDifficulty?
+  sessionType          String           @default("practice")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, completedAt])
+  @@map("question_sessions")
+}

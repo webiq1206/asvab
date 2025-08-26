@@ -1,0 +1,47 @@
+{
+  "name": "asvab-prep-ecosystem",
+  "version": "1.0.0",
+  "description": "Military-focused ASVAB test preparation ecosystem with branch-specific content filtering",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "mobile",
+    "admin",
+    "shared"
+  ],
+  "scripts": {
+    "install:all": "npm install && npm run install:backend && npm run install:mobile && npm run install:admin",
+    "install:backend": "cd backend && npm install",
+    "install:mobile": "cd mobile && npm install",
+    "install:admin": "cd admin && npm install",
+    "dev:backend": "cd backend && npm run start:dev",
+    "dev:mobile": "cd mobile && npx expo start",
+    "dev:admin": "cd admin && npm run dev",
+    "build:backend": "cd backend && npm run build",
+    "build:mobile": "cd mobile && npx expo build",
+    "build:admin": "cd admin && npm run build",
+    "test:backend": "cd backend && npm run test",
+    "test:mobile": "cd mobile && npm run test",
+    "lint:all": "npm run lint:backend && npm run lint:mobile && npm run lint:admin",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:mobile": "cd mobile && npm run lint",
+    "lint:admin": "cd admin && npm run lint",
+    "prisma:generate": "cd backend && npx prisma generate",
+    "prisma:migrate": "cd backend && npx prisma migrate dev",
+    "prisma:studio": "cd backend && npx prisma studio",
+    "prisma:seed": "cd backend && npx prisma db seed"
+  },
+  "keywords": [
+    "asvab",
+    "military",
+    "test-prep",
+    "education",
+    "mobile-app"
+  ],
+  "author": "ASVAB Prep Team",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

@@ -1,0 +1,346 @@
+# ASVAB Prep Analytics Integration Configuration
+# Military-Grade Business Intelligence Integration
+# Connects BI Dashboard with Prometheus, Grafana, and Application Metrics
+
+analytics:
+  # Business Intelligence Dashboard Configuration
+  dashboard:
+    title: "ASVAB Prep Military Command Dashboard"
+    refresh_interval: 30s
+    auto_refresh: true
+    export_formats: ["json", "csv", "excel"]
+    
+  # Metrics Collection Configuration
+  metrics:
+    # User Acquisition Metrics
+    user_acquisition:
+      daily_signups:
+        query: "rate(user_registrations_total[1d])"
+        alert_threshold: 50
+        military_target: 100
+      
+      military_branch_distribution:
+        query: "sum by (branch) (user_registrations_total{branch=~\"ARMY|NAVY|MARINES|AIR_FORCE|COAST_GUARD|SPACE_FORCE\"})"
+        visualization: "pie_chart"
+      
+      cost_per_acquisition:
+        query: "(marketing_spend_total / user_registrations_total) * 100"
+        target: 25.00  # $25 CAC target
+        alert_threshold: 35.00
+
+    # Engagement Metrics  
+    engagement:
+      daily_active_users:
+        query: "count by (day) (user_sessions{timestamp=~\".*today.*\"})"
+        target: 2000
+        alert_threshold: 1500
+      
+      quiz_completion_rate:
+        query: "(quiz_completions_total / quiz_starts_total) * 100"
+        target: 75
+        alert_threshold: 60
+      
+      study_streak_average:
+        query: "avg(user_study_streaks)"
+        target: 7  # days
+        alert_threshold: 5
+
+    # Business Metrics
+    business:
+      monthly_recurring_revenue:
+        query: "sum(subscription_revenue_monthly)"
+        target: 50000
+        alert_threshold: 30000
+        format: "currency"
+      
+      conversion_rate:
+        query: "(premium_users_total / total_users_total) * 100"
+        target: 15
+        alert_threshold: 10
+      
+      churn_rate:
+        query: "(churned_users_monthly / total_users_total) * 100"
+        target: 5
+        alert_threshold: 8
+      
+      lifetime_value:
+        query: "avg(customer_lifetime_value)"
+        target: 200
+        alert_threshold: 150
+
+    # Military-Specific Metrics
+    military:
+      asvab_score_improvement:
+        query: "avg(asvab_score_after - asvab_score_before)"
+        target: 15
+        alert_threshold: 10
+        unit: "points"
+      
+      military_job_accuracy:
+        query: "(correct_job_matches_total / total_job_matches_total) * 100"
+        target: 90
+        alert_threshold: 85
+      
+      branch_satisfaction:
+        query: "avg by (branch) (satisfaction_ratings{branch=~\"ARMY|NAVY|MARINES|AIR_FORCE|COAST_GUARD|SPACE_FORCE\"})"
+        target: 90
+        alert_threshold: 85
+      
+      veteran_engagement:
+        query: "count(user_interactions{user_type=\"veteran\"})"
+        target: 1000
+        alert_threshold: 500
+
+    # Performance Metrics
+    performance:
+      api_response_time:
+        query: "histogram_quantile(0.95, http_request_duration_seconds_bucket)"
+        target: 2.0
+        alert_threshold: 3.0
+        unit: "seconds"
+      
+      system_uptime:
+        query: "(up / (up + down)) * 100"
+        target: 99.9
+        alert_threshold: 99.5
+        unit: "percentage"
+      
+      mobile_performance_score:
+        query: "avg(mobile_performance_metrics)"
+        target: 85
+        alert_threshold: 75
+
+  # Alert Configuration
+  alerts:
+    notification_channels:
+      - type: "slack"
+        webhook_url: "${SLACK_WEBHOOK_URL}"
+        channel: "#military-ops"
+        username: "ASVAB Command"
+        icon_emoji: ":military_medal:"
+        
+      - type: "email"
+        smtp_server: "${SMTP_SERVER}"
+        recipients: ["ops@asvabprep.com", "military-liaison@asvabprep.com"]
+        subject_prefix: "🎖️ ASVAB MILITARY ALERT:"
+        
+      - type: "webhook"
+        url: "${ALERT_WEBHOOK_URL}"
+        method: "POST"
+        headers:
+          Content-Type: "application/json"
+          Authorization: "Bearer ${ALERT_API_TOKEN}"
+
+    # Military-Themed Alert Rules
+    rules:
+      - name: "Military Recruitment Impact"
+        condition: "asvab_score_improvement < 10"
+        severity: "critical"
+        message: "ASVAB score improvement below military standards"
+        military_impact: "Military recruitment and readiness at risk"
+        
+      - name: "Premium Conversion Warning"
+        condition: "conversion_rate < 10"
+        severity: "warning" 
+        message: "Free to premium conversion below target"
+        military_impact: "Limited access to premium military preparation"
+        
+      - name: "System Performance Degradation"
+        condition: "api_response_time > 3"
+        severity: "warning"
+        message: "API response time exceeds military standards"
+        military_impact: "User experience degradation affecting military study sessions"
+        
+      - name: "Military Branch Imbalance"
+        condition: "min(branch_distribution) / max(branch_distribution) < 0.3"
+        severity: "info"
+        message: "Significant imbalance in military branch representation"
+        military_impact: "Underserved military branches need targeted outreach"
+
+# Integration with Existing Infrastructure
+integration:
+  # Prometheus Integration
+  prometheus:
+    endpoint: "http://prometheus:9090"
+    query_timeout: 30s
+    custom_metrics:
+      - name: "military_user_registrations"
+        help: "Number of military user registrations by branch"
+        labels: ["branch", "source", "campaign"]
+        
+      - name: "asvab_score_improvements"
+        help: "ASVAB score improvements by military branch"
+        labels: ["branch", "user_id", "test_type"]
+        buckets: [5, 10, 15, 20, 25, 30, 50]
+        
+      - name: "military_partnership_value"
+        help: "Value generated from military partnerships"
+        labels: ["partner", "branch", "program"]
+
+  # Grafana Integration
+  grafana:
+    endpoint: "http://grafana:3000"
+    api_token: "${GRAFANA_API_TOKEN}"
+    
+    dashboards:
+      - name: "Military Command Dashboard"
+        file: "dashboards/military-command.json"
+        folder: "Military Operations"
+        
+      - name: "Branch Performance Analysis"
+        file: "dashboards/branch-analysis.json"
+        folder: "Military Analytics"
+        
+      - name: "ASVAB Success Metrics"
+        file: "dashboards/asvab-metrics.json"
+        folder: "Military Education"
+
+    # Custom Panel Templates
+    panels:
+      military_branches:
+        type: "stat"
+        title: "Military Branch Distribution"
+        unit: "users"
+        color_mode: "palette-classic"
+        custom_colors:
+          ARMY: "#4caf50"
+          NAVY: "#2196f3" 
+          MARINES: "#f44336"
+          AIR_FORCE: "#03a9f4"
+          COAST_GUARD: "#ff9800"
+          SPACE_FORCE: "#9c27b0"
+
+  # Database Integration
+  database:
+    # Analytics Data Storage
+    connection_string: "${ANALYTICS_DB_URL}"
+    tables:
+      user_events:
+        retention: "90d"
+        partitioning: "monthly"
+        
+      military_metrics:
+        retention: "1y"
+        partitioning: "monthly"
+        
+      business_metrics:
+        retention: "2y"
+        partitioning: "monthly"
+
+  # External Integrations
+  external:
+    # Military API Integrations
+    military_apis:
+      - name: "DOD MOS Database"
+        endpoint: "${DOD_MOS_API_URL}"
+        auth_type: "api_key"
+        rate_limit: 1000  # requests per hour
+        
+      - name: "VA Benefits API" 
+        endpoint: "${VA_BENEFITS_API_URL}"
+        auth_type: "oauth2"
+        scope: "education_benefits"
+
+    # Marketing Platforms
+    marketing:
+      - name: "Military Media Network"
+        api_key: "${MILITARY_MEDIA_API_KEY}"
+        track_conversions: true
+        
+      - name: "Veteran Social Platform"
+        webhook_url: "${VETERAN_PLATFORM_WEBHOOK}"
+        events: ["signup", "conversion", "success_story"]
+
+# Data Export and Reporting
+reporting:
+  # Automated Report Generation
+  daily_reports:
+    enabled: true
+    time: "06:00"  # 0600 hours military time
+    recipients: ["command@asvabprep.com"]
+    format: "executive_summary"
+    
+  weekly_reports:
+    enabled: true
+    day: "monday"
+    time: "08:00"  # 0800 hours
+    format: "detailed_analysis"
+    include_recommendations: true
+    
+  monthly_reports:
+    enabled: true
+    day: 1  # First of month
+    time: "09:00"  # 0900 hours
+    format: "comprehensive_review"
+    include_military_impact: true
+
+  # Data Retention Policies
+  retention:
+    raw_events: "30d"
+    aggregated_metrics: "1y"
+    reports: "2y"
+    military_success_stories: "indefinite"
+
+# Security and Compliance
+security:
+  # Data Privacy
+  privacy:
+    anonymize_pii: true
+    data_encryption: "AES-256"
+    access_logs: true
+    
+  # Military Compliance
+  military_standards:
+    data_classification: "For Official Use Only"
+    access_control: "role_based"
+    audit_trail: "complete"
+    
+  # API Security
+  api:
+    authentication: "jwt"
+    rate_limiting: true
+    ip_whitelist: []  # Configure for production
+    cors_origins: ["https://dashboard.asvabprep.com"]
+
+# Performance Optimization
+performance:
+  # Caching Configuration
+  cache:
+    provider: "redis"
+    ttl: 300  # 5 minutes
+    prefix: "asvab_analytics:"
+    
+  # Query Optimization
+  queries:
+    connection_pool_size: 10
+    query_timeout: 30
+    batch_size: 1000
+    
+  # Resource Limits
+  limits:
+    max_concurrent_queries: 50
+    memory_limit: "2GB"
+    cpu_limit: "1000m"
+
+# Feature Flags
+features:
+  real_time_updates: true
+  military_gamification: true
+  branch_competitions: true
+  ai_recommendations: true
+  predictive_analytics: false  # Beta feature
+  
+# Military Branding
+branding:
+  theme: "military_command"
+  colors:
+    primary: "#ffd700"    # Military gold
+    success: "#4caf50"    # Military green
+    warning: "#ff9800"    # Military orange
+    danger: "#f44336"     # Military red
+    
+  military_ranks:
+    admin: "General"
+    manager: "Colonel" 
+    analyst: "Major"
+    viewer: "Lieutenant"

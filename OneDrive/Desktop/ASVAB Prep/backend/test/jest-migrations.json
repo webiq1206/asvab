@@ -1,0 +1,16 @@
+{
+  "displayName": "ASVAB Backend Migration Tests",
+  "testEnvironment": "node",
+  "roots": ["<rootDir>/test/database"],
+  "testMatch": ["**/database/**/*.(test|spec).ts"],
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapping": {
+    "^@/(.*)$": "<rootDir>/src/$1",
+    "^@test/(.*)$": "<rootDir>/test/$1"
+  },
+  "setupFilesAfterEnv": ["<rootDir>/test/setup.ts"],
+  "testTimeout": 90000,
+  "maxWorkers": 1
+}

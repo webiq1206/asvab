@@ -1,0 +1,105 @@
+{
+  "cli": {
+    "version": ">= 5.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview",
+      "ios": {
+        "simulator": false,
+        "bundleIdentifier": "com.asvabprep.military.preview"
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      }
+    },
+    "production": {
+      "channel": "production",
+      "ios": {
+        "bundleIdentifier": "com.asvabprep.military",
+        "simulator": false,
+        "buildConfiguration": "Release",
+        "scheme": "ASVABPrep"
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "gradleCommand": ":app:bundleRelease"
+      },
+      "env": {
+        "NODE_ENV": "production"
+      }
+    },
+    "production-ios": {
+      "extends": "production",
+      "platform": "ios",
+      "ios": {
+        "bundleIdentifier": "com.asvabprep.military",
+        "simulator": false,
+        "buildConfiguration": "Release",
+        "scheme": "ASVABPrep",
+        "autoIncrement": true,
+        "appleTeamId": "YOUR_APPLE_TEAM_ID"
+      }
+    },
+    "production-android": {
+      "extends": "production",
+      "platform": "android",
+      "android": {
+        "buildType": "app-bundle",
+        "gradleCommand": ":app:bundleRelease",
+        "versionCode": 1
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "YOUR_APPLE_ID_EMAIL",
+        "appleTeamId": "YOUR_APPLE_TEAM_ID",
+        "bundleIdentifier": "com.asvabprep.military",
+        "language": "en-US",
+        "companyName": "ASVAB Prep Military",
+        "sku": "asvab-prep-military-ios"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-service-account-key.json",
+        "track": "production",
+        "releaseStatus": "completed",
+        "applicationId": "com.asvabprep.military"
+      }
+    },
+    "preview": {
+      "ios": {
+        "appleId": "YOUR_APPLE_ID_EMAIL",
+        "appleTeamId": "YOUR_APPLE_TEAM_ID",
+        "bundleIdentifier": "com.asvabprep.military.preview",
+        "language": "en-US"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-service-account-key.json",
+        "track": "internal",
+        "releaseStatus": "draft"
+      }
+    }
+  },
+  "updates": {
+    "production": {
+      "channel": "production"
+    },
+    "preview": {
+      "channel": "preview"
+    }
+  },
+  "experimental": {
+    "prebuildCommand": "npm run prebuild:clean"
+  }
+}

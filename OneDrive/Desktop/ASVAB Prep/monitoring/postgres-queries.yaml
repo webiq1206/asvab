@@ -1,0 +1,347 @@
+# ASVAB Prep PostgreSQL Custom Queries
+# Military-grade database performance monitoring
+
+pg_database:
+  query: |
+    SELECT 
+      pg_database.datname,
+      pg_database_size(pg_database.datname) as size_bytes,
+      pg_stat_database.numbackends,
+      pg_stat_database.xact_commit,
+      pg_stat_database.xact_rollback,
+      pg_stat_database.blks_read,
+      pg_stat_database.blks_hit,
+      pg_stat_database.tup_returned,
+      pg_stat_database.tup_fetched,
+      pg_stat_database.tup_inserted,
+      pg_stat_database.tup_updated,
+      pg_stat_database.tup_deleted
+    FROM pg_database 
+    LEFT JOIN pg_stat_database ON pg_database.datname = pg_stat_database.datname
+    WHERE pg_database.datistemplate = false;
+  master: true
+  cache_seconds: 30
+  metrics:
+    - datname:
+        usage: "LABEL"
+        description: "Name of the database"
+    - size_bytes:
+        usage: "GAUGE"
+        description: "Disk space used by the database"
+    - numbackends:
+        usage: "GAUGE"
+        description: "Number of backends currently connected to this database"
+    - xact_commit:
+        usage: "COUNTER"
+        description: "Number of transactions in this database that have been committed"
+    - xact_rollback:
+        usage: "COUNTER"
+        description: "Number of transactions in this database that have been rolled back"
+    - blks_read:
+        usage: "COUNTER"
+        description: "Number of disk blocks read in this database"
+    - blks_hit:
+        usage: "COUNTER"
+        description: "Number of times disk blocks were found already in the buffer cache"
+    - tup_returned:
+        usage: "COUNTER"
+        description: "Number of rows returned by queries in this database"
+    - tup_fetched:
+        usage: "COUNTER"
+        description: "Number of rows fetched by queries in this database"
+    - tup_inserted:
+        usage: "COUNTER"
+        description: "Number of rows inserted by queries in this database"
+    - tup_updated:
+        usage: "COUNTER"
+        description: "Number of rows updated by queries in this database"
+    - tup_deleted:
+        usage: "COUNTER"
+        description: "Number of rows deleted by queries in this database"
+
+pg_stat_user_tables:
+  query: |
+    SELECT 
+      schemaname,
+      relname,
+      seq_scan,
+      seq_tup_read,
+      idx_scan,
+      idx_tup_fetch,
+      n_tup_ins,
+      n_tup_upd,
+      n_tup_del,
+      n_tup_hot_upd,
+      n_live_tup,
+      n_dead_tup,
+      vacuum_count,
+      autovacuum_count,
+      analyze_count,
+      autoanalyze_count
+    FROM pg_stat_user_tables;
+  master: true
+  cache_seconds: 30
+  metrics:
+    - schemaname:
+        usage: "LABEL"
+        description: "Name of the schema that this table is in"
+    - relname:
+        usage: "LABEL"
+        description: "Name of this table"
+    - seq_scan:
+        usage: "COUNTER"
+        description: "Number of sequential scans initiated on this table"
+    - seq_tup_read:
+        usage: "COUNTER"
+        description: "Number of live rows fetched by sequential scans"
+    - idx_scan:
+        usage: "COUNTER"
+        description: "Number of index scans initiated on this table"
+    - idx_tup_fetch:
+        usage: "COUNTER"
+        description: "Number of live rows fetched by index scans"
+    - n_tup_ins:
+        usage: "COUNTER"
+        description: "Number of rows inserted"
+    - n_tup_upd:
+        usage: "COUNTER"
+        description: "Number of rows updated"
+    - n_tup_del:
+        usage: "COUNTER"
+        description: "Number of rows deleted"
+    - n_tup_hot_upd:
+        usage: "COUNTER"
+        description: "Number of rows HOT updated"
+    - n_live_tup:
+        usage: "GAUGE"
+        description: "Estimated number of live rows"
+    - n_dead_tup:
+        usage: "GAUGE"
+        description: "Estimated number of dead rows"
+    - vacuum_count:
+        usage: "COUNTER"
+        description: "Number of times this table has been manually vacuumed"
+    - autovacuum_count:
+        usage: "COUNTER"
+        description: "Number of times this table has been vacuumed by the autovacuum daemon"
+    - analyze_count:
+        usage: "COUNTER"
+        description: "Number of times this table has been manually analyzed"
+    - autoanalyze_count:
+        usage: "COUNTER"
+        description: "Number of times this table has been analyzed by the autovacuum daemon"
+
+# ASVAB-specific business metrics
+asvab_business_metrics:
+  query: |
+    SELECT 
+      'users' as metric_type,
+      COUNT(*) as total_count,
+      COUNT(*) FILTER (WHERE subscription_tier = 'premium') as premium_count,
+      COUNT(*) FILTER (WHERE subscription_tier = 'free') as free_count,
+      COUNT(*) FILTER (WHERE selected_branch = 'ARMY') as army_count,
+      COUNT(*) FILTER (WHERE selected_branch = 'NAVY') as navy_count,
+      COUNT(*) FILTER (WHERE selected_branch = 'MARINES') as marines_count,
+      COUNT(*) FILTER (WHERE selected_branch = 'AIR_FORCE') as air_force_count,
+      COUNT(*) FILTER (WHERE selected_branch = 'COAST_GUARD') as coast_guard_count,
+      COUNT(*) FILTER (WHERE selected_branch = 'SPACE_FORCE') as space_force_count,
+      COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '24 hours') as new_24h,
+      COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days') as new_7d,
+      COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '30 days') as new_30d
+    FROM users
+    UNION ALL
+    SELECT 
+      'questions' as metric_type,
+      COUNT(*) as total_count,
+      0 as premium_count,
+      0 as free_count,
+      COUNT(*) FILTER (WHERE difficulty = 'EASY') as army_count,
+      COUNT(*) FILTER (WHERE difficulty = 'MEDIUM') as navy_count,
+      COUNT(*) FILTER (WHERE difficulty = 'HARD') as marines_count,
+      COUNT(*) FILTER (WHERE category = 'ARITHMETIC_REASONING') as air_force_count,
+      COUNT(*) FILTER (WHERE category = 'MATHEMATICS_KNOWLEDGE') as coast_guard_count,
+      COUNT(*) FILTER (WHERE category = 'WORD_KNOWLEDGE') as space_force_count,
+      0 as new_24h,
+      0 as new_7d,
+      0 as new_30d
+    FROM questions;
+  master: true
+  cache_seconds: 60
+  metrics:
+    - metric_type:
+        usage: "LABEL"
+        description: "Type of business metric"
+    - total_count:
+        usage: "GAUGE"
+        description: "Total count for this metric type"
+    - premium_count:
+        usage: "GAUGE"
+        description: "Premium users count"
+    - free_count:
+        usage: "GAUGE"
+        description: "Free users count"
+    - army_count:
+        usage: "GAUGE"
+        description: "Army-related count"
+    - navy_count:
+        usage: "GAUGE"
+        description: "Navy-related count"
+    - marines_count:
+        usage: "GAUGE"
+        description: "Marines-related count"
+    - air_force_count:
+        usage: "GAUGE"
+        description: "Air Force-related count"
+    - coast_guard_count:
+        usage: "GAUGE"
+        description: "Coast Guard-related count"
+    - space_force_count:
+        usage: "GAUGE"
+        description: "Space Force-related count"
+    - new_24h:
+        usage: "GAUGE"
+        description: "New items in last 24 hours"
+    - new_7d:
+        usage: "GAUGE"
+        description: "New items in last 7 days"
+    - new_30d:
+        usage: "GAUGE"
+        description: "New items in last 30 days"
+
+# Quiz performance metrics
+asvab_quiz_performance:
+  query: |
+    SELECT 
+      q.category,
+      COUNT(q.id) as total_quizzes,
+      AVG(q.score) as avg_score,
+      MIN(q.score) as min_score,
+      MAX(q.score) as max_score,
+      AVG(q.time_spent) as avg_time_seconds,
+      COUNT(q.id) FILTER (WHERE q.score >= 80) as passing_count,
+      COUNT(q.id) FILTER (WHERE q.completed_at > NOW() - INTERVAL '24 hours') as recent_24h,
+      COUNT(q.id) FILTER (WHERE u.subscription_tier = 'premium') as premium_quizzes,
+      COUNT(q.id) FILTER (WHERE u.subscription_tier = 'free') as free_quizzes
+    FROM quizzes q
+    JOIN users u ON q.user_id = u.id
+    WHERE q.completed_at IS NOT NULL
+    GROUP BY q.category;
+  master: true
+  cache_seconds: 120
+  metrics:
+    - category:
+        usage: "LABEL"
+        description: "Quiz category"
+    - total_quizzes:
+        usage: "GAUGE"
+        description: "Total number of completed quizzes in this category"
+    - avg_score:
+        usage: "GAUGE"
+        description: "Average score for this category"
+    - min_score:
+        usage: "GAUGE"
+        description: "Minimum score for this category"
+    - max_score:
+        usage: "GAUGE"
+        description: "Maximum score for this category"
+    - avg_time_seconds:
+        usage: "GAUGE"
+        description: "Average time spent in seconds"
+    - passing_count:
+        usage: "GAUGE"
+        description: "Number of quizzes with score >= 80"
+    - recent_24h:
+        usage: "GAUGE"
+        description: "Quizzes completed in last 24 hours"
+    - premium_quizzes:
+        usage: "GAUGE"
+        description: "Quizzes taken by premium users"
+    - free_quizzes:
+        usage: "GAUGE"
+        description: "Quizzes taken by free users"
+
+# Connection and performance metrics
+pg_stat_activity:
+  query: |
+    SELECT 
+      COUNT(*) as total_connections,
+      COUNT(*) FILTER (WHERE state = 'active') as active_connections,
+      COUNT(*) FILTER (WHERE state = 'idle') as idle_connections,
+      COUNT(*) FILTER (WHERE state = 'idle in transaction') as idle_in_transaction,
+      COUNT(*) FILTER (WHERE wait_event_type IS NOT NULL) as waiting_connections,
+      AVG(EXTRACT(EPOCH FROM (now() - query_start))) as avg_query_duration_seconds
+    FROM pg_stat_activity 
+    WHERE datname = current_database();
+  master: true
+  cache_seconds: 10
+  metrics:
+    - total_connections:
+        usage: "GAUGE"
+        description: "Total number of connections"
+    - active_connections:
+        usage: "GAUGE"
+        description: "Number of active connections"
+    - idle_connections:
+        usage: "GAUGE"
+        description: "Number of idle connections"
+    - idle_in_transaction:
+        usage: "GAUGE"
+        description: "Number of idle in transaction connections"
+    - waiting_connections:
+        usage: "GAUGE"
+        description: "Number of connections waiting for events"
+    - avg_query_duration_seconds:
+        usage: "GAUGE"
+        description: "Average query duration in seconds"
+
+# Lock monitoring
+pg_locks:
+  query: |
+    SELECT 
+      mode,
+      COUNT(*) as lock_count
+    FROM pg_locks 
+    WHERE database = (SELECT oid FROM pg_database WHERE datname = current_database())
+    GROUP BY mode;
+  master: true
+  cache_seconds: 30
+  metrics:
+    - mode:
+        usage: "LABEL"
+        description: "Lock mode"
+    - lock_count:
+        usage: "GAUGE"
+        description: "Number of locks of this mode"
+
+# Slow queries (last 24h average)
+pg_slow_queries:
+  query: |
+    SELECT 
+      'slow_queries' as query_type,
+      COUNT(*) as query_count,
+      AVG(total_time) as avg_time_ms,
+      MAX(total_time) as max_time_ms,
+      SUM(calls) as total_calls
+    FROM pg_stat_statements 
+    WHERE mean_time > 1000  -- queries slower than 1 second
+    AND query NOT LIKE '%pg_stat_statements%'
+    AND query NOT LIKE '%SHOW%'
+    LIMIT 1;
+  master: true
+  cache_seconds: 300
+  metrics:
+    - query_type:
+        usage: "LABEL"
+        description: "Type of query analysis"
+    - query_count:
+        usage: "GAUGE"
+        description: "Number of slow queries"
+    - avg_time_ms:
+        usage: "GAUGE"
+        description: "Average execution time in milliseconds"
+    - max_time_ms:
+        usage: "GAUGE"
+        description: "Maximum execution time in milliseconds"
+    - total_calls:
+        usage: "GAUGE"
+        description: "Total number of calls to slow queries"

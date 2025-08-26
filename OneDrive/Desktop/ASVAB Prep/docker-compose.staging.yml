@@ -1,0 +1,253 @@
+# ASVAB Prep Staging Environment
+# Military-grade staging deployment for pre-production testing
+
+version: '3.8'
+
+services:
+  # Staging Backend
+  backend-staging:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: asvab-staging-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: staging
+      PORT: 3001
+      DATABASE_URL: postgresql://asvab_staging:${POSTGRES_PASSWORD_STAGING}@postgres-staging:5432/asvab_prep_staging
+      REDIS_URL: redis://redis-staging:6379
+      JWT_SECRET: ${JWT_SECRET_STAGING}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET_STAGING}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY_TEST}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET_TEST}
+      API_BASE_URL: https://staging.asvabprep.com/api
+      WEB_BASE_URL: https://staging.asvabprep.com
+      RATE_LIMIT_WINDOW: 900000
+      RATE_LIMIT_MAX_REQUESTS: 200
+      LOG_LEVEL: debug
+      SENTRY_DSN: ${SENTRY_DSN_STAGING}
+    depends_on:
+      postgres-staging:
+        condition: service_healthy
+      redis-staging:
+        condition: service_healthy
+    volumes:
+      - uploads-staging:/app/uploads
+      - logs-staging:/app/logs
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }).on('error', () => { process.exit(1); });"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - asvab-staging-network
+    labels:
+      - "com.docker.compose.service=backend-staging"
+      - "environment=staging"
+      - "app=asvab-prep"
+
+  # Staging Database
+  postgres-staging:
+    image: postgres:15-alpine
+    container_name: asvab-staging-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: asvab_prep_staging
+      POSTGRES_USER: asvab_staging
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_STAGING}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-staging-data:/var/lib/postgresql/data
+      - ./database/init-staging.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./database/seed-staging.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    ports:
+      - "5433:5432"  # Different port for staging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U asvab_staging -d asvab_prep_staging"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - asvab-staging-network
+    labels:
+      - "com.docker.compose.service=postgres-staging"
+      - "environment=staging"
+
+  # Staging Redis
+  redis-staging:
+    image: redis:7-alpine
+    container_name: asvab-staging-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-staging-data:/data
+    ports:
+      - "6380:6379"  # Different port for staging
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - asvab-staging-network
+    labels:
+      - "com.docker.compose.service=redis-staging"
+      - "environment=staging"
+
+  # Staging Nginx
+  nginx-staging:
+    image: nginx:1.24-alpine
+    container_name: asvab-staging-nginx
+    restart: unless-stopped
+    volumes:
+      - ./nginx/nginx.staging.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl-staging:/etc/nginx/ssl:ro
+      - uploads-staging:/var/www/uploads:ro
+      - ./nginx/html-staging:/var/www/html:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend-staging
+    networks:
+      - asvab-staging-network
+    labels:
+      - "com.docker.compose.service=nginx-staging"
+      - "environment=staging"
+      - "traefik.enable=true"
+      - "traefik.http.routers.asvab-staging.rule=Host(`staging.asvabprep.com`)"
+      - "traefik.http.routers.asvab-staging.tls=true"
+      - "traefik.http.routers.asvab-staging.tls.certresolver=letsencrypt"
+
+  # Staging Monitoring - Prometheus
+  prometheus-staging:
+    image: prom/prometheus:latest
+    container_name: asvab-staging-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.external-url=https://staging.asvabprep.com/prometheus'
+    volumes:
+      - ./monitoring/prometheus.staging.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alert_rules.staging.yml:/etc/prometheus/alert_rules.yml:ro
+      - prometheus-staging-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - asvab-staging-network
+    labels:
+      - "environment=staging"
+
+  # Staging Grafana
+  grafana-staging:
+    image: grafana/grafana:latest
+    container_name: asvab-staging-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD_STAGING}
+      GF_SECURITY_SECRET_KEY: ${GRAFANA_SECRET_KEY_STAGING}
+      GF_SERVER_DOMAIN: staging.asvabprep.com
+      GF_SERVER_ROOT_URL: https://staging.asvabprep.com/grafana
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    volumes:
+      - grafana-staging-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus-staging
+    networks:
+      - asvab-staging-network
+    labels:
+      - "environment=staging"
+
+  # Staging Test Data Generator (for automated testing)
+  test-data-generator:
+    build:
+      context: ./testing
+      dockerfile: Dockerfile.test-data
+    container_name: asvab-staging-test-data
+    restart: "no"
+    environment:
+      API_BASE_URL: http://backend-staging:3001/api
+      DATABASE_URL: postgresql://asvab_staging:${POSTGRES_PASSWORD_STAGING}@postgres-staging:5432/asvab_prep_staging
+      GENERATE_USERS: 100
+      GENERATE_QUESTIONS: 1000
+      GENERATE_QUIZZES: 500
+    depends_on:
+      backend-staging:
+        condition: service_healthy
+    networks:
+      - asvab-staging-network
+    labels:
+      - "environment=staging"
+      - "service=test-data"
+
+  # Staging E2E Test Runner
+  e2e-tests:
+    build:
+      context: ./testing
+      dockerfile: Dockerfile.e2e
+    container_name: asvab-staging-e2e
+    restart: "no"
+    environment:
+      API_BASE_URL: http://backend-staging:3001/api
+      WEB_BASE_URL: http://nginx-staging
+      TEST_USER_EMAIL: test@staging.asvabprep.com
+      TEST_USER_PASSWORD: StagingTest123!
+      HEADLESS: "true"
+      TIMEOUT: 30000
+    depends_on:
+      - nginx-staging
+      - backend-staging
+    volumes:
+      - ./testing/e2e-results:/app/results
+    networks:
+      - asvab-staging-network
+    labels:
+      - "environment=staging"
+      - "service=e2e-tests"
+
+volumes:
+  postgres-staging-data:
+    driver: local
+    labels:
+      environment: staging
+  redis-staging-data:
+    driver: local
+    labels:
+      environment: staging
+  prometheus-staging-data:
+    driver: local
+    labels:
+      environment: staging
+  grafana-staging-data:
+    driver: local
+    labels:
+      environment: staging
+  uploads-staging:
+    driver: local
+    labels:
+      environment: staging
+  logs-staging:
+    driver: local
+    labels:
+      environment: staging
+
+networks:
+  asvab-staging-network:
+    driver: bridge
+    labels:
+      environment: staging
+      app: asvab-prep

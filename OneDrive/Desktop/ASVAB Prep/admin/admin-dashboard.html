@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎖️ ASVAB Prep - Military Command Console</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0d1421, #1a1a2e, #16213e);
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: auto;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.9);
+            padding: 1rem;
+            border-bottom: 3px solid #ffd700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-left h1 {
+            color: #ffd700;
+            font-size: 1.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .header-left .subtitle {
+            color: #88cc88;
+            margin-top: 0.2rem;
+            font-size: 0.8rem;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .admin-info {
+            text-align: right;
+            color: #cccccc;
+            font-size: 0.8rem;
+        }
+
+        .admin-rank {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 80px;
+            width: 250px;
+            height: calc(100vh - 80px);
+            background: rgba(0, 0, 0, 0.8);
+            border-right: 2px solid #ffd700;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            margin-bottom: 2rem;
+        }
+
+        .nav-section h3 {
+            color: #ffd700;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid #444;
+            padding-bottom: 0.25rem;
+        }
+
+        .nav-item {
+            display: block;
+            color: #cccccc;
+            text-decoration: none;
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+            transform: translateX(2px);
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 2rem;
+            min-height: calc(100vh - 80px);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-card {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #ffd700;
+            border-radius: 8px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(255, 215, 0, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            color: #ffd700;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #88cc88;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            color: #cccccc;
+            font-size: 0.9rem;
+        }
+
+        .metric-change {
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+        }
+
+        .metric-up {
+            color: #88cc88;
+        }
+
+        .metric-down {
+            color: #ff6b6b;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .status-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .status-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+
+        .status-label {
+            font-size: 0.8rem;
+            color: #cccccc;
+        }
+
+        .military-branches {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .branch-item {
+            background: rgba(0, 40, 80, 0.6);
+            border: 1px solid #4a90e2;
+            border-radius: 4px;
+            padding: 0.75rem;
+            text-align: center;
+        }
+
+        .branch-name {
+            color: #4a90e2;
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .branch-percentage {
+            color: #88cc88;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .activity-feed {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #ffd700;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            padding: 0.75rem;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-text {
+            color: #cccccc;
+            font-size: 0.9rem;
+        }
+
+        .activity-time {
+            color: #888;
+            font-size: 0.8rem;
+        }
+
+        .alert-section {
+            background: rgba(139, 0, 0, 0.2);
+            border: 2px solid #ff4444;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .alert-section h3 {
+            color: #ff4444;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert-item {
+            background: rgba(255, 68, 68, 0.1);
+            border-left: 4px solid #ff4444;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 4px;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .action-button {
+            background: rgba(255, 215, 0, 0.1);
+            border: 2px solid #ffd700;
+            color: #ffd700;
+            padding: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .action-button:hover {
+            background: rgba(255, 215, 0, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3);
+        }
+
+        .data-table {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #444;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+
+        .data-table th {
+            background: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .data-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #88cc88, #44aa44);
+            transition: width 0.5s ease;
+        }
+
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .status-online { background: #44aa44; }
+        .status-warning { background: #ffaa00; }
+        .status-offline { background: #ff4444; }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-250px);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .military-branches {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <h1>🎖️ ASVAB PREP - MILITARY COMMAND CONSOLE</h1>
+            <div class="subtitle">Administrative Command & Control Center</div>
+        </div>
+        <div class="header-right">
+            <div class="admin-info">
+                <div class="admin-rank">⭐ GENERAL ADMINISTRATOR</div>
+                <div>Last Login: <span id="last-login">Loading...</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar" id="sidebar">
+        <div class="nav-section">
+            <h3>📊 Dashboard</h3>
+            <a href="#overview" class="nav-item active" onclick="showSection('overview')">Overview</a>
+            <a href="#metrics" class="nav-item" onclick="showSection('metrics')">Key Metrics</a>
+            <a href="#alerts" class="nav-item" onclick="showSection('alerts')">System Alerts</a>
+        </div>
+
+        <div class="nav-section">
+            <h3>👥 User Management</h3>
+            <a href="#users" class="nav-item" onclick="showSection('users')">User Accounts</a>
+            <a href="#subscriptions" class="nav-item" onclick="showSection('subscriptions')">Subscriptions</a>
+            <a href="#support" class="nav-item" onclick="showSection('support')">Support Tickets</a>
+        </div>
+
+        <div class="nav-section">
+            <h3>📚 Content Management</h3>
+            <a href="#questions" class="nav-item" onclick="showSection('questions')">Questions</a>
+            <a href="#military-jobs" class="nav-item" onclick="showSection('military-jobs')">Military Jobs</a>
+            <a href="#ai-content" class="nav-item" onclick="showSection('ai-content')">AI Content Review</a>
+        </div>
+
+        <div class="nav-section">
+            <h3>🏛️ Military Data</h3>
+            <a href="#job-database" class="nav-item" onclick="showSection('job-database')">Job Database</a>
+            <a href="#physical-standards" class="nav-item" onclick="showSection('physical-standards')">Physical Standards</a>
+            <a href="#data-sources" class="nav-item" onclick="showSection('data-sources')">Data Sources</a>
+        </div>
+
+        <div class="nav-section">
+            <h3>⚙️ System</h3>
+            <a href="#performance" class="nav-item" onclick="showSection('performance')">Performance</a>
+            <a href="#analytics" class="nav-item" onclick="showSection('analytics')">Analytics</a>
+            <a href="#maintenance" class="nav-item" onclick="showSection('maintenance')">Maintenance</a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Overview Section -->
+        <div id="overview" class="content-section active">
+            <div class="dashboard-grid">
+                <!-- Total Users Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <span class="card-title">👥 Total Users</span>
+                        <span class="card-icon">🎖️</span>
+                    </div>
+                    <div class="metric-value" id="total-users">Loading...</div>
+                    <div class="metric-label">Registered Military Personnel</div>
+                    <div class="metric-change metric-up">↗ +143 today</div>
+                </div>
+
+                <!-- Active Subscriptions Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <span class="card-title">💰 Active Subscriptions</span>
+                        <span class="card-icon">⚡</span>
+                    </div>
+                    <div class="metric-value" id="active-subscriptions">Loading...</div>
+                    <div class="metric-label">Premium Military Users</div>
+                    <div class="metric-change metric-up">↗ +47 conversions today</div>
+                </div>
+
+                <!-- Monthly Revenue Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <span class="card-title">📈 Monthly Recurring Revenue</span>
+                        <span class="card-icon">💎</span>
+                    </div>
+                    <div class="metric-value" id="monthly-revenue">Loading...</div>
+                    <div class="metric-label">USD (MRR)</div>
+                    <div class="metric-change metric-up">↗ +12.4% this month</div>
+                </div>
+
+                <!-- System Status Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <span class="card-title">⚡ System Status</span>
+                        <span class="card-icon">🛡️</span>
+                    </div>
+                    <div class="system-status">
+                        <div class="status-indicator status-online"></div>
+                        <span>OPERATIONAL</span>
+                    </div>
+                    <div class="metric-value" id="system-uptime">Loading...</div>
+                    <div class="metric-label">System Uptime</div>
+                </div>
+            </div>
+
+            <!-- Military Branch Distribution -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <span class="card-title">🇺🇸 Military Branch Distribution</span>
+                </div>
+                <div class="military-branches" id="branch-distribution">
+                    Loading military branch data...
+                </div>
+            </div>
+
+            <!-- Activity Feed -->
+            <div class="activity-feed">
+                <h3 style="color: #ffd700; margin-bottom: 1rem;">📋 Recent Activity</h3>
+                <div id="activity-feed-content">
+                    Loading recent activity...
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <button class="action-button" onclick="sendSystemNotification()">
+                    📢 Send System Notification
+                </button>
+                <button class="action-button" onclick="generateReport()">
+                    📊 Generate Revenue Report
+                </button>
+                <button class="action-button" onclick="reviewContent()">
+                    📝 Review Pending Content
+                </button>
+                <button class="action-button" onclick="checkSystemHealth()">
+                    🔍 Check System Health
+                </button>
+                <button class="action-button" onclick="exportUserData()">
+                    💾 Export User Data
+                </button>
+                <button class="action-button" onclick="updateMilitaryJobs()">
+                    🏛️ Update Military Jobs
+                </button>
+            </div>
+        </div>
+
+        <!-- Users Section -->
+        <div id="users" class="content-section" style="display: none;">
+            <h2 style="color: #ffd700; margin-bottom: 2rem;">👥 User Management</h2>
+            
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <span class="card-title">User Search & Filter</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                    <select id="branch-filter" style="background: rgba(0,0,0,0.7); border: 1px solid #444; color: #fff; padding: 0.5rem;">
+                        <option value="ALL">All Branches</option>
+                        <option value="ARMY">Army</option>
+                        <option value="NAVY">Navy</option>
+                        <option value="MARINES">Marines</option>
+                        <option value="AIR_FORCE">Air Force</option>
+                        <option value="COAST_GUARD">Coast Guard</option>
+                        <option value="SPACE_FORCE">Space Force</option>
+                    </select>
+                    <select id="subscription-filter" style="background: rgba(0,0,0,0.7); border: 1px solid #444; color: #fff; padding: 0.5rem;">
+                        <option value="ALL">All Subscriptions</option>
+                        <option value="FREE">Free</option>
+                        <option value="TRIAL">Trial</option>
+                        <option value="PREMIUM">Premium</option>
+                    </select>
+                    <button class="action-button" onclick="filterUsers()" style="margin: 0;">Apply Filters</button>
+                </div>
+            </div>
+
+            <div class="dashboard-card" style="margin-top: 2rem;">
+                <div class="card-header">
+                    <span class="card-title">User Accounts</span>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Email</th>
+                            <th>Branch</th>
+                            <th>Subscription</th>
+                            <th>Activity</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body">
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: #888;">Loading users...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Other sections will be populated dynamically -->
+        <div id="metrics" class="content-section" style="display: none;">
+            <h2 style="color: #ffd700;">📊 Key Metrics</h2>
+            <p style="color: #ccc; margin-top: 1rem;">Detailed metrics dashboard coming soon...</p>
+        </div>
+
+        <div id="questions" class="content-section" style="display: none;">
+            <h2 style="color: #ffd700;">📚 Question Management</h2>
+            <p style="color: #ccc; margin-top: 1rem;">Question management interface coming soon...</p>
+        </div>
+
+    </div>
+
+    <script src="admin-console.js"></script>
+    <script>
+        let adminConsole;
+        let currentSection = 'overview';
+
+        // Initialize admin console
+        document.addEventListener('DOMContentLoaded', async () => {
+            adminConsole = ASVABAdminConsole.initialize();
+            await loadDashboardData();
+            
+            // Set last login time
+            document.getElementById('last-login').textContent = new Date().toLocaleDateString();
+            
+            // Auto-refresh dashboard every 30 seconds
+            setInterval(loadDashboardData, 30000);
+        });
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                const dashboard = adminConsole.generateAdminDashboard();
+                updateDashboard(dashboard);
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+            }
+        }
+
+        // Update dashboard with fresh data
+        function updateDashboard(data) {
+            // Update executive overview
+            document.getElementById('total-users').textContent = formatNumber(data.executiveOverview.totalUsers);
+            document.getElementById('active-subscriptions').textContent = formatNumber(data.executiveOverview.activeSubscriptions);
+            document.getElementById('monthly-revenue').textContent = '$' + formatNumber(data.executiveOverview.monthlyRecurringRevenue);
+            document.getElementById('system-uptime').textContent = data.executiveOverview.systemUptime.toFixed(2) + '%';
+
+            // Update military branch distribution
+            updateBranchDistribution(data.userManagement.militaryBranchDistribution);
+
+            // Update activity feed
+            updateActivityFeed(data.recentActivity);
+
+            console.log('🎖️ Admin Dashboard updated:', new Date().toLocaleTimeString());
+        }
+
+        // Update military branch distribution
+        function updateBranchDistribution(branches) {
+            const container = document.getElementById('branch-distribution');
+            container.innerHTML = '';
+
+            const branchNames = {
+                'ARMY': '🟢 Army',
+                'NAVY': '⚓ Navy',
+                'MARINES': '🔴 Marines',
+                'AIR_FORCE': '🔵 Air Force',
+                'COAST_GUARD': '🟠 Coast Guard',
+                'SPACE_FORCE': '🚀 Space Force'
+            };
+
+            Object.entries(branches).forEach(([branch, percentage]) => {
+                const item = document.createElement('div');
+                item.className = 'branch-item';
+                item.innerHTML = `
+                    <div class="branch-name">${branchNames[branch] || branch}</div>
+                    <div class="branch-percentage">${percentage.toFixed(1)}%</div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // Update activity feed
+        function updateActivityFeed(activities) {
+            const container = document.getElementById('activity-feed-content');
+            container.innerHTML = '';
+
+            activities.forEach(activity => {
+                const item = document.createElement('div');
+                item.className = 'activity-item';
+                
+                const timeMatch = activity.match(/\(([^)]+)\)/);
+                const time = timeMatch ? timeMatch[1] : 'recently';
+                const text = activity.replace(/\([^)]+\)/, '').trim();
+                
+                item.innerHTML = `
+                    <span class="activity-text">${text}</span>
+                    <span class="activity-time">${time}</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // Section navigation
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+
+            // Remove active class from all nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Show selected section
+            document.getElementById(sectionId).style.display = 'block';
+
+            // Add active class to clicked nav item
+            event.target.classList.add('active');
+
+            currentSection = sectionId;
+
+            // Load section-specific data
+            loadSectionData(sectionId);
+        }
+
+        // Load section-specific data
+        async function loadSectionData(sectionId) {
+            switch(sectionId) {
+                case 'users':
+                    await loadUsersData();
+                    break;
+                case 'questions':
+                    await loadQuestionsData();
+                    break;
+                // Add more cases as needed
+            }
+        }
+
+        // Load users data
+        async function loadUsersData() {
+            try {
+                const users = await adminConsole.getUserAccounts({
+                    page: 1,
+                    militaryBranch: 'ALL',
+                    subscriptionStatus: 'ALL'
+                });
+
+                const tbody = document.getElementById('users-table-body');
+                tbody.innerHTML = '';
+
+                users.users.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${user.id}</td>
+                        <td>${user.email}</td>
+                        <td>${user.militaryBranch}</td>
+                        <td>
+                            <span style="color: ${getSubscriptionColor(user.subscriptionStatus)}">${user.subscriptionStatus}</span>
+                        </td>
+                        <td>${user.activityLevel}</td>
+                        <td>
+                            <button style="background: #ffd700; color: #000; border: none; padding: 0.25rem 0.5rem; border-radius: 3px; cursor: pointer; font-size: 0.8rem;" onclick="viewUser('${user.id}')">View</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Failed to load users data:', error);
+            }
+        }
+
+        // Quick action functions
+        function sendSystemNotification() {
+            alert('System notification interface coming soon...');
+        }
+
+        function generateReport() {
+            alert('Generating comprehensive revenue report...');
+        }
+
+        function reviewContent() {
+            alert('Content review interface coming soon...');
+        }
+
+        function checkSystemHealth() {
+            alert('All systems operational. No critical issues detected.');
+        }
+
+        function exportUserData() {
+            alert('User data export initiated. Download will begin shortly...');
+        }
+
+        function updateMilitaryJobs() {
+            alert('Military job database update initiated...');
+        }
+
+        function filterUsers() {
+            const branchFilter = document.getElementById('branch-filter').value;
+            const subscriptionFilter = document.getElementById('subscription-filter').value;
+            
+            console.log('Filtering users:', { branchFilter, subscriptionFilter });
+            loadUsersData(); // Reload with filters
+        }
+
+        function viewUser(userId) {
+            alert(`Viewing user details for: ${userId}`);
+        }
+
+        // Helper functions
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        }
+
+        function getSubscriptionColor(status) {
+            switch(status) {
+                case 'PREMIUM': return '#44aa44';
+                case 'TRIAL': return '#ffaa00';
+                case 'FREE': return '#cccccc';
+                default: return '#888888';
+            }
+        }
+
+        // Mobile sidebar toggle
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,275 @@
+# ASVAB Prep Alert Rules
+# Military-grade monitoring and alerting for mission-critical operations
+
+groups:
+  # High Priority - Mission Critical Alerts
+  - name: asvab_critical_alerts
+    rules:
+      # Backend service down
+      - alert: ASVABBackendDown
+        expr: up{job="asvab-backend"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: backend
+          branch: all
+        annotations:
+          summary: "🚨 ASVAB Backend Service Down"
+          description: "ASVAB Backend service has been down for more than 30 seconds. Military personnel cannot access training materials!"
+          runbook: "https://docs.asvabprep.com/runbooks/backend-down"
+          action: "Immediate response required - Service members depend on this platform!"
+
+      # Database connection failure
+      - alert: ASVABDatabaseDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+          branch: all
+        annotations:
+          summary: "🚨 ASVAB Database Connection Failed"
+          description: "Database has been unreachable for {{ $value }} minutes. All user data and progress is inaccessible."
+          runbook: "https://docs.asvabprep.com/runbooks/database-down"
+          action: "Emergency database recovery required!"
+
+      # High error rate
+      - alert: ASVABHighErrorRate
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          service: backend
+          branch: all
+        annotations:
+          summary: "🚨 High Error Rate Detected"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes"
+          runbook: "https://docs.asvabprep.com/runbooks/high-error-rate"
+
+      # Memory usage critical
+      - alert: ASVABHighMemoryUsage
+        expr: asvab:memory_usage_ratio > 90
+        for: 5m
+        labels:
+          severity: critical
+          service: backend
+          branch: all
+        annotations:
+          summary: "🚨 Critical Memory Usage"
+          description: "Backend memory usage is {{ $value }}% - approaching system limits"
+          runbook: "https://docs.asvabprep.com/runbooks/high-memory"
+
+  # Medium Priority - Performance Degradation
+  - name: asvab_performance_alerts
+    rules:
+      # High response time
+      - alert: ASVABSlowResponseTime
+        expr: asvab:api_response_time_p95 > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+          branch: all
+        annotations:
+          summary: "⚠️ ASVAB API Response Time Degraded"
+          description: "95th percentile response time is {{ $value }}s - affecting user experience"
+          runbook: "https://docs.asvabprep.com/runbooks/slow-response"
+
+      # High CPU usage
+      - alert: ASVABHighCPUUsage
+        expr: asvab:cpu_usage_ratio > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+          branch: all
+        annotations:
+          summary: "⚠️ High CPU Usage Detected"
+          description: "Backend CPU usage is {{ $value }}% - consider scaling up"
+          runbook: "https://docs.asvabprep.com/runbooks/high-cpu"
+
+      # Database connection pool exhaustion
+      - alert: ASVABDatabasePoolExhaustion
+        expr: asvab:db_pool_usage_ratio > 0.85
+        for: 3m
+        labels:
+          severity: warning
+          service: database
+          branch: all
+        annotations:
+          summary: "⚠️ Database Connection Pool Near Limit"
+          description: "Database pool usage is {{ $value | humanizePercentage }} - may cause connection timeouts"
+          runbook: "https://docs.asvabprep.com/runbooks/db-pool-exhaustion"
+
+      # Disk space warning
+      - alert: ASVABLowDiskSpace
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 15
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+          branch: all
+        annotations:
+          summary: "⚠️ Low Disk Space"
+          description: "Disk space is {{ $value }}% available on {{ $labels.instance }}"
+          runbook: "https://docs.asvabprep.com/runbooks/low-disk-space"
+
+  # Military Branch Specific Alerts
+  - name: asvab_military_alerts
+    rules:
+      # Low quiz completion rate by branch
+      - alert: ASVABLowQuizCompletionRate
+        expr: asvab:quiz_completion_rate_by_difficulty < 0.5
+        for: 10m
+        labels:
+          severity: warning
+          service: education
+          branch: "{{ $labels.military_branch }}"
+        annotations:
+          summary: "📚 Low Quiz Completion Rate - {{ $labels.military_branch }}"
+          description: "{{ $labels.military_branch }} personnel showing {{ $value | humanizePercentage }} completion rate for {{ $labels.difficulty }} quizzes"
+          runbook: "https://docs.asvabprep.com/runbooks/low-completion-rate"
+          action: "Review content difficulty and provide additional support"
+
+      # High failure rate for specific branches
+      - alert: ASVABHighFailureRateByBranch
+        expr: (1 - asvab:quiz_success_rate_by_branch) > 0.4
+        for: 15m
+        labels:
+          severity: warning
+          service: education
+          branch: "{{ $labels.military_branch }}"
+        annotations:
+          summary: "📊 High Failure Rate - {{ $labels.military_branch }}"
+          description: "{{ $labels.military_branch }} showing {{ $value | humanizePercentage }} failure rate - requires attention"
+          runbook: "https://docs.asvabprep.com/runbooks/high-failure-rate"
+
+  # Business Metrics Alerts
+  - name: asvab_business_alerts
+    rules:
+      # Subscription conversion rate drop
+      - alert: ASVABLowConversionRate
+        expr: asvab:subscription_conversion_rate < 0.05
+        for: 30m
+        labels:
+          severity: warning
+          service: business
+          branch: all
+        annotations:
+          summary: "💰 Low Subscription Conversion Rate"
+          description: "Conversion rate dropped to {{ $value | humanizePercentage }} - review pricing and features"
+          runbook: "https://docs.asvabprep.com/runbooks/low-conversion"
+
+      # Daily active users declining
+      - alert: ASVABDecreasingDAU
+        expr: (asvab:daily_active_users - asvab:daily_active_users offset 24h) / asvab:daily_active_users offset 24h < -0.1
+        for: 1h
+        labels:
+          severity: info
+          service: business
+          branch: all
+        annotations:
+          summary: "📈 Daily Active Users Declining"
+          description: "DAU decreased by {{ $value | humanizePercentage }} compared to yesterday"
+          runbook: "https://docs.asvabprep.com/runbooks/declining-dau"
+
+  # Infrastructure Alerts
+  - name: asvab_infrastructure_alerts
+    rules:
+      # Redis connection issues
+      - alert: ASVABRedisDown
+        expr: up{job="redis"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: cache
+          branch: all
+        annotations:
+          summary: "⚡ Redis Cache Unavailable"
+          description: "Redis cache has been down for {{ $value }} minutes - performance may be degraded"
+          runbook: "https://docs.asvabprep.com/runbooks/redis-down"
+
+      # SSL certificate expiring
+      - alert: ASVABSSLCertificateExpiring
+        expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 30
+        for: 1h
+        labels:
+          severity: warning
+          service: security
+          branch: all
+        annotations:
+          summary: "🔒 SSL Certificate Expiring Soon"
+          description: "SSL certificate for {{ $labels.instance }} expires in {{ $value }} days"
+          runbook: "https://docs.asvabprep.com/runbooks/ssl-renewal"
+
+      # Load balancer health
+      - alert: ASVABLoadBalancerUnhealthy
+        expr: up{job="nginx"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: loadbalancer
+          branch: all
+        annotations:
+          summary: "⚖️ Load Balancer Unhealthy"
+          description: "Nginx load balancer is down - traffic routing affected"
+          runbook: "https://docs.asvabprep.com/runbooks/lb-down"
+
+  # Security Alerts
+  - name: asvab_security_alerts
+    rules:
+      # High rate of failed authentication attempts
+      - alert: ASVABHighFailedAuthRate
+        expr: sum(rate(asvab_auth_failures_total[5m])) > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: security
+          branch: all
+        annotations:
+          summary: "🔐 High Authentication Failure Rate"
+          description: "{{ $value }} failed auth attempts per second - possible brute force attack"
+          runbook: "https://docs.asvabprep.com/runbooks/auth-failures"
+          action: "Review IP addresses and consider rate limiting"
+
+      # Unusual military branch access patterns
+      - alert: ASVABUnusualBranchActivity
+        expr: rate(asvab_requests_total[10m]) by (military_branch) > 2 * rate(asvab_requests_total[10m] offset 1h) by (military_branch)
+        for: 5m
+        labels:
+          severity: info
+          service: security
+          branch: "{{ $labels.military_branch }}"
+        annotations:
+          summary: "🔍 Unusual Activity Pattern - {{ $labels.military_branch }}"
+          description: "{{ $labels.military_branch }} showing 2x normal activity - monitor for anomalies"
+          runbook: "https://docs.asvabprep.com/runbooks/unusual-activity"
+
+  # WebSocket and Real-time Alerts
+  - name: asvab_websocket_alerts
+    rules:
+      # High WebSocket connection failures
+      - alert: ASVABWebSocketConnectionFailures
+        expr: rate(asvab_ws_connection_failures_total[5m]) > 5
+        for: 3m
+        labels:
+          severity: warning
+          service: websocket
+          branch: all
+        annotations:
+          summary: "🔌 WebSocket Connection Failures"
+          description: "{{ $value }} WebSocket connections failing per second - study groups may be affected"
+          runbook: "https://docs.asvabprep.com/runbooks/websocket-failures"
+
+      # Study room capacity issues
+      - alert: ASVABStudyRoomCapacityHigh
+        expr: asvab_study_rooms_active / asvab_study_rooms_max > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: collaboration
+          branch: all
+        annotations:
+          summary: "🏫 Study Room Capacity Near Limit"
+          description: "{{ $value | humanizePercentage }} of study room capacity used - may need to scale"
+          runbook: "https://docs.asvabprep.com/runbooks/study-room-capacity"

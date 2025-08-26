@@ -1,0 +1,173 @@
+{
+  "expo": {
+    "name": "ASVAB Prep Military",
+    "slug": "asvab-prep-military",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#3C3D37"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.asvabprep.military",
+      "buildNumber": "1",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "NSCameraUsageDescription": "ASVAB Prep needs camera access to scan practice materials and enable augmented reality study features.",
+        "NSPhotoLibraryUsageDescription": "ASVAB Prep needs photo library access to save study materials and progress screenshots.",
+        "NSUserTrackingUsageDescription": "ASVAB Prep uses tracking to provide personalized study recommendations and measure app performance to better serve military personnel."
+      },
+      "associatedDomains": [
+        "applinks:asvabprep.com",
+        "applinks:api.asvabprep.com"
+      ],
+      "capabilities": [
+        "push-notifications",
+        "in-app-purchase"
+      ]
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#3C3D37"
+      },
+      "package": "com.asvabprep.military",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED",
+        "WAKE_LOCK",
+        "com.android.vending.BILLING"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "asvabprep.com"
+            },
+            {
+              "scheme": "https",
+              "host": "api.asvabprep.com"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#4B5320",
+          "sounds": [
+            "./assets/sounds/mission-complete.wav",
+            "./assets/sounds/new-mission.wav",
+            "./assets/sounds/achievement.wav"
+          ]
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "ASVAB Prep needs camera access to scan practice materials and enable augmented reality study features."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "ASVAB Prep needs photo library access to save study materials and progress screenshots.",
+          "savePhotosPermission": "Allow ASVAB Prep to save your study progress and achievements to your photo library."
+        }
+      ],
+      [
+        "@react-native-async-storage/async-storage",
+        {
+          "useNextStorage": false
+        }
+      ],
+      [
+        "expo-secure-store"
+      ],
+      [
+        "expo-linking",
+        {
+          "scheme": "asvabprep"
+        }
+      ],
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Oswald-Regular.ttf",
+            "./assets/fonts/Oswald-Bold.ttf",
+            "./assets/fonts/Inter-Regular.ttf",
+            "./assets/fonts/Inter-Medium.ttf",
+            "./assets/fonts/Inter-SemiBold.ttf",
+            "./assets/fonts/Inter-Bold.ttf"
+          ]
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#3C3D37",
+          "image": "./assets/splash.png",
+          "imageWidth": 200,
+          "resizeMode": "contain"
+        }
+      ],
+      [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "ASVAB Prep uses tracking to provide personalized study recommendations and measure app performance to better serve military personnel."
+        }
+      ]
+    ],
+    "scheme": "asvabprep",
+    "experiments": {
+      "typedRoutes": true,
+      "tsconfigPaths": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "your-expo-project-id"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/your-expo-project-id"
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
+    "owner": "asvab-prep-team"
+  }
+}

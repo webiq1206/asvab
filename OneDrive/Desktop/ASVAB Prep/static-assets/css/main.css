@@ -1,0 +1,507 @@
+/* ASVAB Prep - Military-Grade CSS Framework */
+/* Serving those who serve - Global CDN Optimized */
+
+:root {
+  /* Military Color Palette */
+  --military-olive: #3C3D37;
+  --military-green: #4B5320;
+  --desert-sand: #C2B280;
+  --khaki: #BDB76B;
+  --tactical-orange: #FF8C00;
+  --navy-blue: #000080;
+  --army-gold: #FFD700;
+  --marine-red: #DC143C;
+  --air-force-blue: #00308F;
+  --coast-guard-orange: #FF8C00;
+  
+  /* Typography */
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-military: 'Oswald', Arial Black, sans-serif;
+  --font-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  
+  /* Spacing Scale */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+  
+  /* Border Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 350ms ease;
+}
+
+/* Reset and Base Styles */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-primary);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--military-olive);
+  background-color: #ffffff;
+  min-height: 100vh;
+}
+
+/* Typography Scale */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-military);
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: var(--space-md);
+  color: var(--military-olive);
+}
+
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.75rem; }
+h4 { font-size: 1.5rem; }
+h5 { font-size: 1.25rem; }
+h6 { font-size: 1.125rem; }
+
+p {
+  margin-bottom: var(--space-md);
+  max-width: 65ch;
+}
+
+/* Military Branch Theme Classes */
+.theme-army {
+  --primary-color: var(--military-green);
+  --accent-color: var(--army-gold);
+  --greeting: "Hooah!";
+}
+
+.theme-navy {
+  --primary-color: var(--navy-blue);
+  --accent-color: var(--army-gold);
+  --greeting: "Hooyah!";
+}
+
+.theme-marines {
+  --primary-color: var(--marine-red);
+  --accent-color: var(--army-gold);
+  --greeting: "Oorah!";
+}
+
+.theme-air-force {
+  --primary-color: var(--air-force-blue);
+  --accent-color: var(--army-gold);
+  --greeting: "Hoorah!";
+}
+
+.theme-coast-guard {
+  --primary-color: var(--coast-guard-orange);
+  --accent-color: var(--navy-blue);
+  --greeting: "Semper Paratus!";
+}
+
+.theme-space-force {
+  --primary-color: #1a1a2e;
+  --accent-color: #16213e;
+  --greeting: "Semper Supra!";
+}
+
+/* Button Components */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  font-family: var(--font-military);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  text-decoration: none;
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 0.5);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Button Variants */
+.btn-primary {
+  background-color: var(--primary-color, var(--military-green));
+  color: white;
+  border-color: var(--primary-color, var(--military-green));
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--primary-color, var(--military-green)) 85%, black);
+  border-color: color-mix(in srgb, var(--primary-color, var(--military-green)) 85%, black);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--primary-color, var(--military-green));
+  border-color: var(--primary-color, var(--military-green));
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--primary-color, var(--military-green));
+  color: white;
+}
+
+.btn-tactical {
+  background: linear-gradient(135deg, var(--tactical-orange), #e67e00);
+  color: white;
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-tactical::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left var(--transition-slow);
+}
+
+.btn-tactical:hover::before {
+  left: 100%;
+}
+
+/* Card Components */
+.card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-base);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.card-military {
+  background: linear-gradient(145deg, #f8fafc, #f1f5f9);
+  border: 2px solid var(--primary-color, var(--military-green));
+  position: relative;
+}
+
+.card-military::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, 
+    var(--primary-color, var(--military-green)), 
+    var(--accent-color, var(--army-gold))
+  );
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+/* Quiz Components */
+.quiz-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--space-lg);
+}
+
+.question-card {
+  background: white;
+  border: 2px solid var(--military-green);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.question-number {
+  display: inline-block;
+  background: var(--primary-color, var(--military-green));
+  color: white;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  margin-bottom: var(--space-md);
+}
+
+.answer-option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border: 2px solid #e5e7eb;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-sm);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.answer-option:hover {
+  border-color: var(--primary-color, var(--military-green));
+  background-color: #f8fafc;
+}
+
+.answer-option.selected {
+  border-color: var(--primary-color, var(--military-green));
+  background-color: color-mix(in srgb, var(--primary-color, var(--military-green)) 10%, white);
+}
+
+.answer-option.correct {
+  border-color: #10b981;
+  background-color: #ecfdf5;
+}
+
+.answer-option.incorrect {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+/* Progress Components */
+.progress-bar {
+  width: 100%;
+  height: 0.5rem;
+  background-color: #e5e7eb;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: var(--space-lg);
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, 
+    var(--primary-color, var(--military-green)), 
+    var(--accent-color, var(--army-gold))
+  );
+  transition: width var(--transition-slow);
+  border-radius: var(--radius-lg);
+}
+
+/* Badge Components */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  border-radius: var(--radius-md);
+}
+
+.badge-success {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.badge-warning {
+  background-color: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.badge-error {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.badge-military {
+  background: linear-gradient(135deg, var(--primary-color, var(--military-green)), var(--accent-color, var(--army-gold)));
+  color: white;
+  border: none;
+}
+
+/* Military Rank Stripes */
+.rank-stripes {
+  position: relative;
+  padding-left: var(--space-lg);
+}
+
+.rank-stripes::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--primary-color, var(--military-green)),
+    var(--primary-color, var(--military-green)) 4px,
+    var(--accent-color, var(--army-gold)) 4px,
+    var(--accent-color, var(--army-gold)) 8px
+  );
+}
+
+/* Utility Classes */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.font-military { font-family: var(--font-military); }
+.font-mono { font-family: var(--font-mono); }
+
+.text-military { color: var(--military-olive); }
+.text-primary { color: var(--primary-color, var(--military-green)); }
+.text-accent { color: var(--accent-color, var(--army-gold)); }
+
+.bg-military { background-color: var(--military-olive); }
+.bg-primary { background-color: var(--primary-color, var(--military-green)); }
+.bg-accent { background-color: var(--accent-color, var(--army-gold)); }
+
+.rounded { border-radius: var(--radius-md); }
+.rounded-lg { border-radius: var(--radius-lg); }
+.rounded-xl { border-radius: var(--radius-xl); }
+.rounded-full { border-radius: 9999px; }
+
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+.shadow-xl { box-shadow: var(--shadow-xl); }
+
+/* Spacing Utilities */
+.m-0 { margin: 0; }
+.m-1 { margin: var(--space-xs); }
+.m-2 { margin: var(--space-sm); }
+.m-4 { margin: var(--space-md); }
+.m-6 { margin: var(--space-lg); }
+.m-8 { margin: var(--space-xl); }
+
+.p-0 { padding: 0; }
+.p-1 { padding: var(--space-xs); }
+.p-2 { padding: var(--space-sm); }
+.p-4 { padding: var(--space-md); }
+.p-6 { padding: var(--space-lg); }
+.p-8 { padding: var(--space-xl); }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  :root {
+    --space-xs: 0.125rem;
+    --space-sm: 0.25rem;
+    --space-md: 0.75rem;
+    --space-lg: 1rem;
+    --space-xl: 1.5rem;
+  }
+  
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.75rem; }
+  h3 { font-size: 1.5rem; }
+  
+  .btn {
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.8rem;
+  }
+  
+  .quiz-container {
+    padding: var(--space-md);
+  }
+  
+  .question-card {
+    padding: var(--space-lg);
+  }
+}
+
+/* Animation Classes */
+.fade-in {
+  animation: fadeIn var(--transition-slow) ease-in;
+}
+
+.slide-up {
+  animation: slideUp var(--transition-base) ease-out;
+}
+
+.pulse-military {
+  animation: pulseMilitary 2s infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseMilitary {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(75, 83, 32, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(75, 83, 32, 0);
+  }
+}
+
+/* Print Styles */
+@media print {
+  .btn,
+  .badge,
+  [role="button"] {
+    display: none !important;
+  }
+  
+  .card {
+    border: 1px solid #000;
+    box-shadow: none;
+  }
+  
+  .progress-bar {
+    border: 1px solid #000;
+  }
+}

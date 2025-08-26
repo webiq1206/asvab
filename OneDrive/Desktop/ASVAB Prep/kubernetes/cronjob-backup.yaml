@@ -1,0 +1,376 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: asvab-backup-cronjob
+  namespace: asvab-prep
+  labels:
+    app: asvab-backup
+    component: maintenance
+    branch: production
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  startingDeadlineSeconds: 300
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 3600  # 1 hour timeout
+      template:
+        metadata:
+          labels:
+            app: asvab-backup
+            component: maintenance
+        spec:
+          serviceAccountName: asvab-backup-sa
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            fsGroup: 1001
+          containers:
+          - name: backup-executor
+            image: postgres:15-alpine
+            imagePullPolicy: Always
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              
+              # Install required tools
+              apk add --no-cache curl aws-cli gzip tar
+              
+              # Military-style logging
+              log_info() {
+                echo "[$(date '+%Y-%m-%d %H:%M:%S')] 📋 INFO: $1"
+              }
+              
+              log_success() {
+                echo "[$(date '+%Y-%m-%d %H:%M:%S')] ✅ SUCCESS: $1"
+              }
+              
+              log_error() {
+                echo "[$(date '+%Y-%m-%d %H:%M:%S')] ❌ ERROR: $1"
+                exit 1
+              }
+              
+              TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+              BACKUP_PATH="/backups"
+              
+              log_info "🎖️ ASVAB Prep Automated Backup Mission Initiated"
+              log_info "Timestamp: $TIMESTAMP"
+              
+              # Create backup directories
+              mkdir -p "$BACKUP_PATH/database"
+              mkdir -p "$BACKUP_PATH/uploads"
+              
+              # Database backup
+              log_info "Starting database backup operation..."
+              
+              PGPASSWORD="$POSTGRES_PASSWORD" pg_dump \
+                -h "$POSTGRES_HOST" \
+                -U "$POSTGRES_USER" \
+                -d "$POSTGRES_DB" \
+                --verbose \
+                --no-owner \
+                --no-privileges \
+                --clean \
+                --if-exists \
+                | gzip > "$BACKUP_PATH/database/postgres_${TIMESTAMP}.sql.gz"
+              
+              if [ $? -eq 0 ]; then
+                log_success "Database backup completed successfully"
+              else
+                log_error "Database backup failed!"
+              fi
+              
+              # Backup metadata
+              cat > "$BACKUP_PATH/database/postgres_${TIMESTAMP}.meta" << EOF
+              backup_date: $(date)
+              database: $POSTGRES_DB
+              user: $POSTGRES_USER
+              host: $POSTGRES_HOST
+              file_size: $(du -h "$BACKUP_PATH/database/postgres_${TIMESTAMP}.sql.gz" | cut -f1)
+              compression: gzip
+              status: completed
+              kubernetes_job: true
+              EOF
+              
+              # Upload to S3 if configured
+              if [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$S3_BUCKET" ]; then
+                log_info "Uploading backup to S3..."
+                
+                aws s3 cp "$BACKUP_PATH/database/postgres_${TIMESTAMP}.sql.gz" \
+                  "s3://$S3_BUCKET/$(date +%Y)/$(date +%m)/$(date +%d)/postgres_${TIMESTAMP}.sql.gz" \
+                  --storage-class STANDARD_IA
+                
+                aws s3 cp "$BACKUP_PATH/database/postgres_${TIMESTAMP}.meta" \
+                  "s3://$S3_BUCKET/$(date +%Y)/$(date +%m)/$(date +%d)/postgres_${TIMESTAMP}.meta"
+                
+                log_success "Backup uploaded to S3 successfully"
+              fi
+              
+              # Cleanup old local backups (keep last 7 days)
+              find "$BACKUP_PATH/database" -type f -mtime +7 -delete 2>/dev/null || true
+              
+              # Generate backup report
+              cat > "$BACKUP_PATH/backup_report_${TIMESTAMP}.json" << EOF
+              {
+                "backup_session": {
+                  "timestamp": "$TIMESTAMP",
+                  "date": "$(date)",
+                  "kubernetes_cronjob": true,
+                  "status": "completed"
+                },
+                "database": {
+                  "backed_up": true,
+                  "file": "postgres_${TIMESTAMP}.sql.gz",
+                  "host": "$POSTGRES_HOST",
+                  "database": "$POSTGRES_DB"
+                },
+                "cloud_storage": {
+                  "provider": "AWS S3",
+                  "bucket": "$S3_BUCKET",
+                  "uploaded": $([ -n "$S3_BUCKET" ] && echo "true" || echo "false")
+                }
+              }
+              EOF
+              
+              log_success "🎖️ ASVAB Prep backup mission accomplished!"
+              log_success "Military data secured and protected! 🇺🇸"
+              
+              # Send notification (webhook call)
+              if [ -n "$SLACK_WEBHOOK_URL" ]; then
+                curl -X POST -H 'Content-type: application/json' \
+                  --data "{\"text\":\"🎖️ ASVAB Prep automated backup completed successfully! Timestamp: $TIMESTAMP\"}" \
+                  "$SLACK_WEBHOOK_URL" || true
+              fi
+            env:
+            - name: POSTGRES_HOST
+              value: "postgres"
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: asvab-secrets
+                  key: postgres-db
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: asvab-secrets
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: asvab-secrets
+                  key: postgres-password
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: asvab-secrets
+                  key: aws-access-key-id
+                  optional: true
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: asvab-secrets
+                  key: aws-secret-access-key
+                  optional: true
+            - name: AWS_DEFAULT_REGION
+              value: "us-east-1"
+            - name: S3_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: asvab-secrets
+                  key: s3-backup-bucket
+                  optional: true
+            - name: SLACK_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: asvab-secrets
+                  key: slack-webhook-url
+                  optional: true
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "100m"
+              limits:
+                memory: "512Mi"
+                cpu: "300m"
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backups
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                - ALL
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: asvab-backup-pvc
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: asvab-backup-pvc
+  namespace: asvab-prep
+  labels:
+    app: asvab-backup
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: fast-ssd  # Adjust based on your storage class
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: asvab-backup-sa
+  namespace: asvab-prep
+  labels:
+    app: asvab-backup
+    component: service-account
+automountServiceAccountToken: false
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: asvab-backup-role
+  namespace: asvab-prep
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: asvab-backup-rolebinding
+  namespace: asvab-prep
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: asvab-backup-role
+subjects:
+- kind: ServiceAccount
+  name: asvab-backup-sa
+  namespace: asvab-prep
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: asvab-backup-cleanup
+  namespace: asvab-prep
+  labels:
+    app: asvab-backup-cleanup
+    component: maintenance
+spec:
+  schedule: "0 3 * * 0"  # Weekly cleanup on Sunday at 3 AM
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: asvab-backup-cleanup
+        spec:
+          serviceAccountName: asvab-backup-sa
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            fsGroup: 1001
+          containers:
+          - name: backup-cleanup
+            image: amazon/aws-cli:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              
+              log_info() {
+                echo "[$(date '+%Y-%m-%d %H:%M:%S')] 🧹 CLEANUP: $1"
+              }
+              
+              log_info "🎖️ ASVAB Prep Backup Cleanup Mission"
+              
+              # Local cleanup
+              find /backups -type f -mtime +30 -delete 2>/dev/null || true
+              
+              # S3 cleanup (delete backups older than 90 days)
+              if [ -n "$S3_BUCKET" ]; then
+                log_info "Cleaning up old S3 backups..."
+                
+                cutoff_date=$(date -d '90 days ago' '+%Y-%m-%d')
+                
+                aws s3api list-objects-v2 \
+                  --bucket "$S3_BUCKET" \
+                  --query "Contents[?LastModified<'$cutoff_date'].Key" \
+                  --output text | \
+                while read -r key; do
+                  if [ "$key" != "None" ] && [ -n "$key" ]; then
+                    aws s3 rm "s3://$S3_BUCKET/$key"
+                    log_info "Deleted old backup: $key"
+                  fi
+                done
+              fi
+              
+              log_info "🎖️ Backup cleanup mission accomplished!"
+            env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: asvab-secrets
+                  key: aws-access-key-id
+                  optional: true
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: asvab-secrets
+                  key: aws-secret-access-key
+                  optional: true
+            - name: AWS_DEFAULT_REGION
+              value: "us-east-1"
+            - name: S3_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: asvab-secrets
+                  key: s3-backup-bucket
+                  optional: true
+            resources:
+              requests:
+                memory: "128Mi"
+                cpu: "50m"
+              limits:
+                memory: "256Mi"
+                cpu: "200m"
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backups
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                - ALL
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: asvab-backup-pvc

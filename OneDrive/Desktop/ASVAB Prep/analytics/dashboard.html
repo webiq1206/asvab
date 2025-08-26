@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎖️ ASVAB Prep - Military Command Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: auto;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 1rem;
+            border-bottom: 3px solid #ffd700;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header h1 {
+            color: #ffd700;
+            font-size: 1.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .header .subtitle {
+            color: #88cc88;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .dashboard-container {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #ffd700;
+            border-radius: 8px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(255, 215, 0, 0.3);
+        }
+
+        .metric-card h3 {
+            color: #ffd700;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #88cc88;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            color: #cccccc;
+            font-size: 0.9rem;
+        }
+
+        .military-branches {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .branch-card {
+            background: rgba(0, 40, 80, 0.6);
+            border: 1px solid #4a90e2;
+            border-radius: 6px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .branch-card .branch-name {
+            color: #4a90e2;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .branch-card .user-count {
+            color: #88cc88;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .alert-section {
+            margin: 2rem 0;
+            background: rgba(139, 0, 0, 0.2);
+            border: 2px solid #ff4444;
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .alert-section h3 {
+            color: #ff4444;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert-item {
+            background: rgba(255, 68, 68, 0.1);
+            border-left: 4px solid #ff4444;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 4px;
+        }
+
+        .alert-critical {
+            border-left-color: #ff0000;
+            background: rgba(255, 0, 0, 0.15);
+        }
+
+        .alert-warning {
+            border-left-color: #ffaa00;
+            background: rgba(255, 170, 0, 0.15);
+        }
+
+        .chart-container {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #ffd700;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .chart-container h3 {
+            color: #ffd700;
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #88cc88, #44aa44);
+            transition: width 0.5s ease;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-green { background: #44aa44; }
+        .status-yellow { background: #ffaa00; }
+        .status-red { background: #ff4444; }
+
+        .military-impact {
+            background: rgba(0, 100, 0, 0.2);
+            border: 2px solid #44aa44;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .military-impact h3 {
+            color: #44aa44;
+            margin-bottom: 1rem;
+        }
+
+        .impact-metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #ffd700;
+            color: #000;
+            border: none;
+            padding: 1rem;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .export-controls {
+            position: fixed;
+            top: 100px;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .export-btn {
+            background: rgba(0, 0, 0, 0.8);
+            color: #ffd700;
+            border: 1px solid #ffd700;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.8rem;
+            transition: background 0.3s ease;
+        }
+
+        .export-btn:hover {
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .military-branches {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .export-controls {
+                position: static;
+                flex-direction: row;
+                justify-content: center;
+                margin: 1rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎖️ ASVAB PREP - MILITARY COMMAND DASHBOARD</h1>
+        <div class="subtitle">Real-Time Military Education Intelligence • Serving Those Who Serve</div>
+    </div>
+
+    <div class="export-controls">
+        <button class="export-btn" onclick="exportDashboard('json')">📊 Export JSON</button>
+        <button class="export-btn" onclick="exportDashboard('csv')">📋 Export CSV</button>
+        <button class="export-btn" onclick="exportDashboard('excel')">📈 Export Excel</button>
+    </div>
+
+    <div class="dashboard-container">
+        <!-- Overview Metrics -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <h3>🎯 Total Military Users</h3>
+                <div class="metric-value" id="total-users">Loading...</div>
+                <div class="metric-label">Serving Military Personnel</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>⚡ Daily Active Users</h3>
+                <div class="metric-value" id="active-users">Loading...</div>
+                <div class="metric-label">Currently Studying</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>👑 Premium Users</h3>
+                <div class="metric-value" id="premium-users">Loading...</div>
+                <div class="metric-label">Elite Training Access</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>💰 Monthly Revenue</h3>
+                <div class="metric-value" id="monthly-revenue">Loading...</div>
+                <div class="metric-label">Recurring Revenue (MRR)</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>📈 Conversion Rate</h3>
+                <div class="metric-value" id="conversion-rate">Loading...</div>
+                <div class="metric-label">Free to Premium</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>🏆 ASVAB Improvement</h3>
+                <div class="metric-value" id="asvab-improvement">Loading...</div>
+                <div class="metric-label">Average Score Increase</div>
+            </div>
+        </div>
+
+        <!-- Military Branch Distribution -->
+        <div class="chart-container">
+            <h3>🇺🇸 Military Branch Distribution</h3>
+            <div class="military-branches" id="branch-distribution">
+                Loading military branch data...
+            </div>
+        </div>
+
+        <!-- Military Impact Metrics -->
+        <div class="military-impact">
+            <h3>🎖️ Military Impact Assessment</h3>
+            <div id="military-impact-content">Loading impact metrics...</div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="chart-container">
+            <h3>⚡ System Performance</h3>
+            <div id="performance-metrics">
+                <div class="impact-metric">
+                    <span>API Response Time</span>
+                    <span id="api-response-time">Loading...</span>
+                </div>
+                <div class="impact-metric">
+                    <span>System Uptime</span>
+                    <span id="system-uptime">Loading...</span>
+                </div>
+                <div class="impact-metric">
+                    <span>Mobile Performance</span>
+                    <span id="mobile-performance">Loading...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts Section -->
+        <div class="alert-section" id="alerts-section" style="display: none;">
+            <h3>🚨 Military Mission Alerts</h3>
+            <div id="alerts-content">No active alerts</div>
+        </div>
+    </div>
+
+    <button class="refresh-btn" onclick="refreshDashboard()">🔄</button>
+
+    <script src="business-intelligence-dashboard.js"></script>
+    <script>
+        let analytics;
+        let dashboardData;
+
+        // Initialize the analytics system
+        document.addEventListener('DOMContentLoaded', () => {
+            analytics = ASVABBusinessIntelligence.initialize();
+            refreshDashboard();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(refreshDashboard, 30000);
+        });
+
+        function refreshDashboard() {
+            try {
+                dashboardData = analytics.generateDashboard();
+                updateDashboard(dashboardData);
+            } catch (error) {
+                console.error('Dashboard refresh failed:', error);
+                showError('Dashboard data temporarily unavailable');
+            }
+        }
+
+        function updateDashboard(data) {
+            // Update overview metrics
+            document.getElementById('total-users').textContent = formatNumber(data.overview.totalUsers);
+            document.getElementById('active-users').textContent = formatNumber(data.overview.activeUsers);
+            document.getElementById('premium-users').textContent = formatNumber(data.overview.premiumUsers);
+            document.getElementById('monthly-revenue').textContent = '$' + formatNumber(data.overview.monthlyRevenue);
+            document.getElementById('conversion-rate').textContent = data.overview.conversionRate.toFixed(1) + '%';
+            document.getElementById('asvab-improvement').textContent = '+' + data.military.asvabScoreImprovement.toFixed(1);
+
+            // Update military branch distribution
+            updateBranchDistribution(data.overview.militaryBranchDistribution);
+
+            // Update military impact
+            updateMilitaryImpact(data.military);
+
+            // Update performance metrics
+            document.getElementById('api-response-time').textContent = data.performance.apiResponseTime.toFixed(0) + 'ms';
+            document.getElementById('system-uptime').textContent = data.performance.systemUptime.toFixed(2) + '%';
+            document.getElementById('mobile-performance').textContent = data.performance.mobilePerformanceScore.toFixed(0) + '/100';
+
+            // Update alerts
+            updateAlerts(data.alerts);
+
+            // Update last refresh time
+            console.log('🎖️ Dashboard updated:', new Date().toLocaleTimeString());
+        }
+
+        function updateBranchDistribution(branches) {
+            const container = document.getElementById('branch-distribution');
+            container.innerHTML = '';
+
+            const branchNames = {
+                'ARMY': '🟢 Army',
+                'NAVY': '⚓ Navy', 
+                'MARINES': '🔴 Marines',
+                'AIR_FORCE': '🔵 Air Force',
+                'COAST_GUARD': '🟠 Coast Guard',
+                'SPACE_FORCE': '🚀 Space Force'
+            };
+
+            Object.entries(branches).forEach(([branch, count]) => {
+                const card = document.createElement('div');
+                card.className = 'branch-card';
+                card.innerHTML = `
+                    <div class="branch-name">${branchNames[branch] || branch}</div>
+                    <div class="user-count">${formatNumber(count)}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function updateMilitaryImpact(militaryData) {
+            const container = document.getElementById('military-impact-content');
+            container.innerHTML = `
+                <div class="impact-metric">
+                    <span>Military Personnel Served</span>
+                    <span>${formatNumber(militaryData.militaryPersonnelServed || 0)}</span>
+                </div>
+                <div class="impact-metric">
+                    <span>Job Placement Accuracy</span>
+                    <span>${militaryData.militaryJobAccuracy.toFixed(1)}%</span>
+                </div>
+                <div class="impact-metric">
+                    <span>Veteran Engagement</span>
+                    <span>${formatNumber(militaryData.veteranEngagement)}</span>
+                </div>
+                <div class="impact-metric">
+                    <span>Partnership Value</span>
+                    <span>$${formatNumber(militaryData.militaryPartnershipValue)}</span>
+                </div>
+            `;
+        }
+
+        function updateAlerts(alerts) {
+            const section = document.getElementById('alerts-section');
+            const content = document.getElementById('alerts-content');
+
+            if (alerts && alerts.length > 0) {
+                section.style.display = 'block';
+                content.innerHTML = alerts.map(alert => `
+                    <div class="alert-item alert-${alert.priority.toLowerCase()}">
+                        <div style="font-weight: bold; color: ${alert.priority === 'CRITICAL' ? '#ff0000' : '#ffaa00'}">
+                            ${alert.category}: ${alert.type}
+                        </div>
+                        <div style="margin: 0.5rem 0;">${alert.message}</div>
+                        <div style="color: #cccccc; font-size: 0.9rem;">
+                            Military Impact: ${alert.militaryImpact}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                section.style.display = 'none';
+            }
+        }
+
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        }
+
+        function exportDashboard(format) {
+            if (!analytics) {
+                alert('Analytics system not initialized');
+                return;
+            }
+
+            try {
+                const exportData = analytics.exportMetrics(format);
+                const blob = new Blob([exportData], { 
+                    type: format === 'json' ? 'application/json' : 'text/plain' 
+                });
+                
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `asvab-dashboard-${new Date().toISOString().split('T')[0]}.${format}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                console.log(`📊 Dashboard exported as ${format.toUpperCase()}`);
+            } catch (error) {
+                console.error('Export failed:', error);
+                alert('Export failed. Please try again.');
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert-item alert-critical';
+            errorDiv.innerHTML = `
+                <div style="font-weight: bold; color: #ff0000">SYSTEM ERROR</div>
+                <div>${message}</div>
+            `;
+            
+            const section = document.getElementById('alerts-section');
+            section.style.display = 'block';
+            section.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.remove();
+                if (section.children.length <= 1) {
+                    section.style.display = 'none';
+                }
+            }, 5000);
+        }
+
+        // Simulate real-time updates for demo
+        function simulateRealTimeData() {
+            if (analytics && dashboardData) {
+                // Simulate new user registration
+                analytics.trackEvent('user_registered', {
+                    militaryBranch: ['ARMY', 'NAVY', 'MARINES', 'AIR_FORCE'][Math.floor(Math.random() * 4)],
+                    source: 'military_base'
+                });
+                
+                // Update dashboard
+                refreshDashboard();
+            }
+        }
+
+        // Simulate data updates every 2 minutes
+        setInterval(simulateRealTimeData, 120000);
+    </script>
+</body>
+</html>

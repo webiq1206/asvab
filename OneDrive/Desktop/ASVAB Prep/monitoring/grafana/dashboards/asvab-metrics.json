@@ -1,0 +1,33 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "ASVAB Prep - Production Metrics",
+    "tags": ["asvab", "production", "military"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Active Users",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "asvab_active_users",
+            "legendFormat": "Active Users"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Quiz Completion Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(asvab_quizzes_completed[5m])",
+            "legendFormat": "Quiz Completions/min"
+          }
+        ]
+      }
+    ]
+  }
+}

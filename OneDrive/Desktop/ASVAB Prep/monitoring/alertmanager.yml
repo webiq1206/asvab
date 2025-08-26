@@ -1,0 +1,172 @@
+# ASVAB Prep AlertManager Configuration
+# Military-grade alert routing and notification
+
+global:
+  smtp_smarthost: 'localhost:587'
+  smtp_from: 'alerts@asvabprep.com'
+  smtp_auth_username: 'alerts@asvabprep.com'
+  smtp_auth_password: 'your_smtp_password'
+
+# Define alert routing tree
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 12h
+  receiver: 'asvab-default'
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'asvab-critical'
+      group_wait: 10s
+      repeat_interval: 5m
+
+    # Backend service alerts
+    - match:
+        service: backend
+      receiver: 'asvab-backend'
+      
+    # Database alerts
+    - match:
+        service: database
+      receiver: 'asvab-database'
+      
+    # Security alerts
+    - match:
+        service: security
+      receiver: 'asvab-security'
+      repeat_interval: 1h
+      
+    # Business metrics alerts
+    - match:
+        service: business
+      receiver: 'asvab-business'
+      repeat_interval: 4h
+
+# Alert receivers configuration
+receivers:
+  # Default receiver
+  - name: 'asvab-default'
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#asvab-alerts'
+        title: '🎖️ ASVAB Prep Alert'
+        text: '{{ range .Alerts }}{{ .Annotations.summary }}: {{ .Annotations.description }}{{ end }}'
+        color: 'warning'
+        
+  # Critical alerts - multiple channels
+  - name: 'asvab-critical'
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#asvab-critical'
+        title: '🚨 CRITICAL: ASVAB Prep System Alert'
+        text: |
+          🎖️ **MILITARY CRITICAL ALERT** 🎖️
+          {{ range .Alerts }}
+          **Alert:** {{ .Annotations.summary }}
+          **Description:** {{ .Annotations.description }}
+          **Service:** {{ .Labels.service }}
+          **Severity:** {{ .Labels.severity }}
+          **Time:** {{ .StartsAt }}
+          **Runbook:** {{ .Annotations.runbook }}
+          {{ end }}
+          
+          **Action Required:** Immediate response needed!
+        color: 'danger'
+    email_configs:
+      - to: 'ops@asvabprep.com'
+        subject: '🚨 CRITICAL ALERT: ASVAB Prep System'
+        body: |
+          Military personnel,
+          
+          A critical alert has been triggered in the ASVAB Prep system:
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Service: {{ .Labels.service }}
+          Started: {{ .StartsAt }}
+          {{ end }}
+          
+          Immediate action required!
+          
+          Semper Fi!
+          ASVAB Prep Monitoring System
+
+  # Backend service alerts
+  - name: 'asvab-backend'
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#asvab-backend'
+        title: '⚙️ Backend Service Alert'
+        text: |
+          🎖️ **BACKEND ALERT**
+          {{ range .Alerts }}
+          **Issue:** {{ .Annotations.summary }}
+          **Details:** {{ .Annotations.description }}
+          **Action:** {{ .Annotations.action }}
+          {{ end }}
+        color: 'warning'
+
+  # Database alerts
+  - name: 'asvab-database'
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#asvab-database'
+        title: '🗄️ Database Alert'
+        text: |
+          🎖️ **DATABASE ALERT**
+          {{ range .Alerts }}
+          **Issue:** {{ .Annotations.summary }}
+          **Details:** {{ .Annotations.description }}
+          **Impact:** Military data access may be affected
+          {{ end }}
+        color: 'danger'
+
+  # Security alerts
+  - name: 'asvab-security'
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#asvab-security'
+        title: '🔒 Security Alert'
+        text: |
+          🎖️ **SECURITY ALERT**
+          {{ range .Alerts }}
+          **Threat:** {{ .Annotations.summary }}
+          **Details:** {{ .Annotations.description }}
+          **Action:** {{ .Annotations.action }}
+          **Priority:** Military data security at risk
+          {{ end }}
+        color: 'danger'
+
+  # Business metrics alerts
+  - name: 'asvab-business'
+    slack_configs:
+      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+        channel: '#asvab-business'
+        title: '📊 Business Metrics Alert'
+        text: |
+          🎖️ **BUSINESS METRICS ALERT**
+          {{ range .Alerts }}
+          **Metric:** {{ .Annotations.summary }}
+          **Details:** {{ .Annotations.description }}
+          **Branch Impact:** {{ .Labels.branch }}
+          {{ end }}
+        color: 'good'
+
+# Inhibition rules
+inhibit_rules:
+  # Silence warning alerts when critical alerts are firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'service']
+
+  # Silence instance-level alerts when entire service is down
+  - source_match:
+      alertname: 'ASVABBackendDown'
+    target_match_re:
+      alertname: 'ASVAB.*'
+    equal: ['service']

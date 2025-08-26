@@ -1,0 +1,18 @@
+{
+  "displayName": "ASVAB Backend Performance Tests",
+  "testEnvironment": "node",
+  "roots": ["<rootDir>/test/performance"],
+  "testMatch": ["**/performance/**/*.(test|spec).ts"],
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapping": {
+    "^@/(.*)$": "<rootDir>/src/$1",
+    "^@test/(.*)$": "<rootDir>/test/$1"
+  },
+  "setupFilesAfterEnv": ["<rootDir>/test/setup.ts"],
+  "globalSetup": "<rootDir>/test/global-setup.ts",
+  "globalTeardown": "<rootDir>/test/global-teardown.ts",
+  "testTimeout": 120000,
+  "maxWorkers": 1
+}
